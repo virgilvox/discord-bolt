@@ -1,5 +1,5 @@
 /**
- * Jexl-based expression evaluator
+ * Jexl-based expression evaluator with LRU caching
  */
 
 import Jexl from 'jexl';
@@ -12,12 +12,60 @@ export interface EvaluatorOptions {
   timeout?: number;
   /** Whether to allow undefined variables (false = error) */
   allowUndefined?: boolean;
+  /** Maximum number of cached compiled expressions (default: 1000) */
+  cacheSize?: number;
 }
 
 const DEFAULT_OPTIONS: Required<EvaluatorOptions> = {
   timeout: 5000,
   allowUndefined: false,
+  cacheSize: 1000,
 };
+
+/**
+ * Simple LRU cache for compiled expressions
+ */
+class LRUCache<K, V> {
+  private cache: Map<K, V> = new Map();
+  private maxSize: number;
+
+  constructor(maxSize: number) {
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      // Move to end (most recently used)
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    // Remove if exists to update position
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+    // Evict oldest if at capacity
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    this.cache.set(key, value);
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
 
 /**
  * Create a new expression evaluator instance
@@ -29,14 +77,63 @@ export function createEvaluator(options: EvaluatorOptions = {}): ExpressionEvalu
 export class ExpressionEvaluator {
   private jexl: Jexl.Jexl;
   private options: Required<EvaluatorOptions>;
+  private expressionCache: LRUCache<string, Jexl.Expression>;
+  private templateCache: LRUCache<string, { pattern: RegExp; matches: string[] }>;
+
+  // Stats for monitoring
+  private stats = {
+    evaluations: 0,
+    cacheHits: 0,
+    cacheMisses: 0,
+  };
 
   constructor(options: Required<EvaluatorOptions>) {
     this.options = options;
     this.jexl = new Jexl.Jexl();
+    this.expressionCache = new LRUCache(options.cacheSize);
+    this.templateCache = new LRUCache(Math.floor(options.cacheSize / 2));
 
     // Register built-in functions and transforms
     registerFunctions(this.jexl);
     registerTransforms(this.jexl);
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getStats(): { evaluations: number; cacheHits: number; cacheMisses: number; hitRate: number; cacheSize: number } {
+    const hitRate = this.stats.evaluations > 0
+      ? (this.stats.cacheHits / this.stats.evaluations) * 100
+      : 0;
+    return {
+      ...this.stats,
+      hitRate: Math.round(hitRate * 100) / 100,
+      cacheSize: this.expressionCache.size,
+    };
+  }
+
+  /**
+   * Clear all caches
+   */
+  clearCache(): void {
+    this.expressionCache.clear();
+    this.templateCache.clear();
+    this.stats = { evaluations: 0, cacheHits: 0, cacheMisses: 0 };
+  }
+
+  /**
+   * Get a compiled expression from cache or compile it
+   */
+  private getCompiledExpression(expression: string): Jexl.Expression {
+    let compiled = this.expressionCache.get(expression);
+    if (compiled) {
+      this.stats.cacheHits++;
+    } else {
+      this.stats.cacheMisses++;
+      compiled = this.jexl.compile(expression);
+      this.expressionCache.set(expression, compiled);
+    }
+    return compiled;
   }
 
   /**
@@ -54,16 +151,21 @@ export class ExpressionEvaluator {
   }
 
   /**
-   * Evaluate an expression
+   * Evaluate an expression (cached compilation)
    */
   async evaluate<T = unknown>(
     expression: string,
     context: Record<string, unknown> = {}
   ): Promise<T> {
+    this.stats.evaluations++;
+
     try {
+      // Get compiled expression from cache
+      const compiled = this.getCompiledExpression(expression);
+
       // Wrap evaluation with timeout
       const result = await Promise.race([
-        this.jexl.eval(expression, context),
+        compiled.eval(context),
         new Promise((_, reject) =>
           setTimeout(
             () => reject(new Error('Expression evaluation timeout')),
@@ -88,14 +190,17 @@ export class ExpressionEvaluator {
   }
 
   /**
-   * Evaluate an expression synchronously (no timeout)
+   * Evaluate an expression synchronously (cached, no timeout)
    */
   evaluateSync<T = unknown>(
     expression: string,
     context: Record<string, unknown> = {}
   ): T {
+    this.stats.evaluations++;
+
     try {
-      return this.jexl.evalSync(expression, context) as T;
+      const compiled = this.getCompiledExpression(expression);
+      return compiled.evalSync(context) as T;
     } catch (err) {
       if (err instanceof Error) {
         throw new ExpressionSyntaxError(expression, err.message);

@@ -1,4 +1,4 @@
-# FURLOW — Bot Orchestration Layout & Toolkit
+# FURLOW — Flexible User Rules for Live Online Workers
 
 ### Specification v0.1.0-draft
 
@@ -4323,5 +4323,5 @@ Channels can be referenced by:
 
 ---
 
-*FURLOW v0.1.0-draft — Bot Orchestration Layout & Toolkit*
+*FURLOW v0.1.0-draft — Flexible User Rules for Live Online Workers*
 *A spec by the makers, for the makers.*

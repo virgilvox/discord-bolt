@@ -19,6 +19,7 @@ const ajv = new Ajv({
   verbose: true,
   strict: false,
   allowUnionTypes: true,
+  validateSchema: false, // Don't validate the schema itself (we use 2020-12 which isn't bundled)
 });
 
 addFormats(ajv);

@@ -30,6 +30,20 @@ export function registerTransforms(jexl: Jexl.Jexl): void {
   jexl.addTransform('padEnd', (s: string, len: number, char = ' ') => {
     return String(s ?? '').padEnd(len, char);
   });
+  jexl.addTransform('includes', (s: string | unknown[], search: unknown) => {
+    if (Array.isArray(s)) return s.includes(search);
+    return String(s ?? '').includes(String(search));
+  });
+  jexl.addTransform('startsWith', (s: string, search: string) => {
+    return String(s ?? '').startsWith(search);
+  });
+  jexl.addTransform('endsWith', (s: string, search: string) => {
+    return String(s ?? '').endsWith(search);
+  });
+  jexl.addTransform('contains', (s: string | unknown[], search: unknown) => {
+    if (Array.isArray(s)) return s.includes(search);
+    return String(s ?? '').includes(String(search));
+  });
 
   // Array transforms
   jexl.addTransform('join', (arr: unknown[], delimiter = ', ') => arr?.join(delimiter) ?? '');
