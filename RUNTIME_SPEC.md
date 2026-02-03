@@ -12,6 +12,12 @@ This document defines the requirements for a compliant FURLOW runtime implementa
 
 1. [Introduction](#1-introduction)
 2. [YAML Specification Format](#2-yaml-specification-format)
+   - 2.1 File Extension
+   - 2.2 Top-Level Schema
+   - 2.3 Spec Version
+   - 2.4 Processing Pipeline *(load → normalize → validate)*
+   - 2.5 Action Normalization
+   - 2.6 Import Resolution
 3. [Expression Language](#3-expression-language)
 4. [State Management](#4-state-management)
 5. [Action System](#5-action-system)
@@ -191,9 +197,38 @@ imports:
 
 Runtimes MUST reject specs with incompatible versions and provide a clear error message.
 
-### 2.4 Action Normalization
+### 2.4 Processing Pipeline
 
-FURLOW supports two action formats. Runtimes MUST normalize shorthand to schema format before execution.
+Runtimes MUST process FURLOW specifications in the following order:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   FURLOW Processing Pipeline                 │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. LOAD         Parse YAML file(s)                         │
+│       ↓                                                      │
+│  2. RESOLVE      Process imports, merge specs               │
+│       ↓                                                      │
+│  3. ENV          Resolve environment variables              │
+│       ↓                                                      │
+│  4. NORMALIZE    Convert shorthand → schema format  ←────┐  │
+│       ↓                                              │  │
+│  5. VALIDATE     Check against JSON schema           │  │
+│       ↓                                              │  │
+│  6. EXECUTE      Run at runtime                      │  │
+│                                                      │  │
+│  Note: Normalization MUST happen BEFORE validation ──┘  │
+│        This allows shorthand syntax in YAML files.      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Critical**: Normalization (step 4) MUST occur BEFORE validation (step 5). This ensures that user-friendly shorthand syntax in YAML files passes schema validation.
+
+### 2.5 Action Normalization
+
+FURLOW supports two action formats. Runtimes MUST normalize shorthand to schema format **before schema validation**.
 
 **Shorthand format** (YAML-friendly):
 ```yaml
@@ -213,30 +248,51 @@ FURLOW supports two action formats. Runtimes MUST normalize shorthand to schema 
 ```
 function normalizeAction(action):
     if action has "action" key:
-        return action  # Already normalized
+        return normalizeNestedActions(action)  # Already normalized, check nested
 
     for key in action.keys():
-        if key is known action name:
-            config = action[key]
-            return { action: key, ...config }
+        if key not in ["when", "error_handler"]:
+            config = action[key] if isObject(action[key]) else {}
+            normalized = { action: key, ...config }
+            if action.when: normalized.when = action.when
+            if action.error_handler: normalized.error_handler = action.error_handler
+            return normalizeNestedActions(normalized)
 
-    throw InvalidActionError("Unknown action format")
+    return action  # No action key found, will fail validation
 ```
 
-Runtimes MUST apply normalization in:
-- Event handler execution
-- Flow engine execution
-- Command execution
-- Automod rule execution
-- Cron job execution
+**Nested action normalization:**
+Control flow actions (`flow_if`, `flow_switch`, `flow_while`, `repeat`, `parallel`, `batch`, `try`) contain nested action arrays. Runtimes MUST recursively normalize these:
+- `then`, `else` (flow_if)
+- `cases`, `default` (flow_switch)
+- `do` (flow_while, repeat)
+- `actions` (parallel)
+- `template` (batch)
+- `try`, `catch`, `finally` (try)
 
-### 2.5 Import Resolution
+**Idempotency requirement:**
+Normalization MUST be idempotent. Calling normalize on already-normalized actions MUST produce identical output. This allows safe double-normalization without side effects.
+
+**Locations requiring normalization:**
+- `commands[].actions` and `commands[].subcommands[].actions`
+- `context_menus[].actions`
+- `events[].actions`
+- `flows[].actions`
+- `scheduler.jobs[].actions`
+- `automod.rules[].actions` and `automod.rules[].escalation.actions`
+- `components.buttons[].actions`
+- `components.selects[].actions`
+- `components.modals[].actions`
+
+### 2.6 Import Resolution
 
 When processing `imports`:
 1. Resolve path relative to current spec file
-2. Parse and validate imported spec
-3. Merge definitions (later imports override earlier)
-4. Circular imports MUST be detected and rejected
+2. Detect and reject circular imports
+3. Parse imported YAML (do NOT validate yet)
+4. Merge definitions (later imports override earlier)
+5. After all imports merged, normalize the complete spec
+6. Validate the normalized spec against schema
 
 ---
 

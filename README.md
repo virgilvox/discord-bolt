@@ -21,19 +21,21 @@ commands:
 - **76 Events** — Discord gateway + high-level FURLOW events
 - **Scoped State** — Global, guild, channel, user, member scopes
 - **Flows** — Reusable action sequences with parameters
+- **External Integrations** — HTTP, WebSocket, MQTT, TCP/UDP, webhooks
 
 ## Quick Start
 
 ```bash
-# Install
-npm install -g furlow
+# Install the CLI
+npm install -g @furlow/cli
 
 # Create a bot
 furlow init my-bot
 cd my-bot
 
-# Add your Discord token to .env
+# Add your Discord credentials to .env
 echo "DISCORD_TOKEN=your_token_here" > .env
+echo "DISCORD_CLIENT_ID=your_client_id_here" >> .env
 
 # Start
 furlow start
@@ -107,6 +109,7 @@ events:
 | [Expressions Reference](docs/reference/expressions/) | Functions and transforms |
 | [Events Reference](docs/reference/events.md) | Event types |
 | [CLI Reference](docs/reference/cli.md) | Command-line interface |
+| [Pipes Reference](docs/packages/pipes.md) | External integrations |
 | [Examples](docs/examples/) | Complete bot examples |
 
 ## Packages
@@ -119,7 +122,7 @@ events:
 | `@furlow/schema` | TypeScript types |
 | `@furlow/storage` | Database adapters |
 | `@furlow/builtins` | Pre-built modules |
-| `@furlow/pipes` | External integrations |
+| `@furlow/pipes` | HTTP, WebSocket, MQTT, TCP/UDP, webhooks |
 | `@furlow/testing` | Test utilities |
 
 ## License

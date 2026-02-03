@@ -1,8 +1,15 @@
 {
   "name": "@furlow/pipes",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "External integration pipes for FURLOW bot framework",
-  "keywords": ["furlow", "discord", "pipes", "http", "websocket", "mqtt"],
+  "keywords": [
+    "furlow",
+    "discord",
+    "pipes",
+    "http",
+    "websocket",
+    "mqtt"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -47,7 +54,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",
@@ -65,6 +74,7 @@
     "ws": "^8.16.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.11.0",
     "@types/ws": "^8.5.0",
     "tsup": "^8.0.0",

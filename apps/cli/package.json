@@ -1,8 +1,9 @@
 {
   "name": "@furlow/cli",
-  "version": "0.2.1",
-  "description": "CLI for FURLOW Discord bot framework",
-  "keywords": ["furlow", "discord", "bot", "cli"],
+  "version": "1.0.0",
+  "description": "Declarative Discord Bot Framework - Build bots with YAML, no code required",
+  "keywords": ["furlow", "discord", "bot", "cli", "yaml", "declarative", "framework"],
+  "homepage": "https://github.com/virgilvox/discord-furlow",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -14,7 +15,7 @@
   "bin": {
     "furlow": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",

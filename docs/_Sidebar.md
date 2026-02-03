@@ -16,6 +16,9 @@
 ## Examples
 - [Simple Bot](examples/simple-bot)
 
+## Packages
+- [Pipes](packages/pipes)
+
 ## Links
 - [GitHub](https://github.com/furlow/furlow)
 - [npm](https://www.npmjs.com/org/furlow)

@@ -15,6 +15,7 @@ import {
   SchemaValidationError,
 } from '../errors/index.js';
 import { resolveEnvVariables } from './env.js';
+import { normalizeSpec } from './normalize.js';
 
 export interface LoaderOptions {
   /** Base directory for resolving relative imports */
@@ -290,9 +291,12 @@ export async function loadSpec(
     []
   );
 
+  // Normalize spec before validation (converts shorthand actions to schema format)
+  const normalizedSpec = normalizeSpec(spec);
+
   // Validate if requested
   if (options.validate !== false) {
-    const result = validateFurlowSpec(spec);
+    const result = validateFurlowSpec(normalizedSpec);
     if (!result.valid) {
       throw new SchemaValidationError(
         result.errors.map((e) => ({ path: e.path, message: e.message })),
@@ -301,7 +305,7 @@ export async function loadSpec(
     }
   }
 
-  return { spec, files };
+  return { spec: normalizedSpec, files };
 }
 
 /**
@@ -331,9 +335,12 @@ export function loadSpecFromString(
     throw err;
   }
 
+  // Normalize spec before validation (converts shorthand actions to schema format)
+  const normalizedSpec = normalizeSpec(spec);
+
   // Validate if requested
   if (options.validate !== false) {
-    const result = validateFurlowSpec(spec);
+    const result = validateFurlowSpec(normalizedSpec);
     if (!result.valid) {
       throw new SchemaValidationError(
         result.errors.map((e) => ({ path: e.path, message: e.message }))
@@ -341,5 +348,5 @@ export function loadSpecFromString(
     }
   }
 
-  return spec;
+  return normalizedSpec;
 }

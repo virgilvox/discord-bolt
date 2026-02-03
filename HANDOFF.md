@@ -4,29 +4,29 @@
 
 FURLOW (**F**lexible **U**ser **R**ules for **L**ive **O**nline **W**orkers) is a declarative Discord bot framework that allows building bots using YAML specifications. The project is a TypeScript monorepo using pnpm workspaces and Turborepo.
 
-## Current State: v0.2.0 PUBLISHED - FEATURE COMPLETE
+## Current State: v1.0.0 PUBLISHED - FEATURE COMPLETE
 
 As of 2026-02-03, all 9 packages are published to npm with comprehensive test coverage. **All code features are 100% implemented.**
 
 | Package | Version | Status | Tests | Notes |
 |---------|---------|--------|-------|-------|
-| `@furlow/schema` | 0.2.0 | ✅ Published | - | Type definitions and JSON schemas |
-| `@furlow/storage` | 0.2.0 | ✅ Published | 41 | SQLite, PostgreSQL, Memory adapters |
-| `@furlow/core` | 0.2.0 | ✅ Published | 250 | Parser, expression, **84 action handlers**, flows |
-| `@furlow/discord` | 0.2.0 | ✅ Published | 53 | Discord.js wrapper, voice, video, interactions |
-| `@furlow/pipes` | 0.2.0 | ✅ Published | 114 | HTTP, WebSocket, Webhook, MQTT, TCP, UDP |
-| `@furlow/testing` | 0.2.0 | ✅ Published | 142 | Mocks, fixtures, E2E tests, bot lifecycle |
-| `@furlow/builtins` | 0.2.0 | ✅ Published | - | 14 builtin modules |
-| `@furlow/dashboard` | 0.2.0 | ✅ Published | - | Express server + React client + 18 API endpoints |
-| `@furlow/cli` | 0.2.0 | ✅ Published | - | Command-line interface (init, start, validate, add, export) |
+| `@furlow/schema` | 1.0.0 | ✅ Published | - | Type definitions and JSON schemas |
+| `@furlow/storage` | 1.0.0 | ✅ Published | 41 | SQLite, PostgreSQL, Memory adapters |
+| `@furlow/core` | 1.0.0 | ✅ Published | 283 | Parser, expression, **84 action handlers**, flows, normalization |
+| `@furlow/discord` | 1.0.0 | ✅ Published | 53 | Discord.js wrapper, voice, video, interactions |
+| `@furlow/pipes` | 1.0.0 | ✅ Published | 234 | HTTP, WebSocket, Webhook, MQTT, TCP, UDP, File, Database |
+| `@furlow/testing` | 1.0.0 | ✅ Published | 142 | Mocks, fixtures, E2E tests, bot lifecycle |
+| `@furlow/builtins` | 1.0.0 | ✅ Published | - | 14 builtin modules |
+| `@furlow/dashboard` | 1.0.0 | ✅ Published | - | Express server + React client + 18 API endpoints |
+| `@furlow/cli` | 1.0.0 | ✅ Published | - | Command-line interface (init, start, validate, add, export) |
 
-**Total Tests: 559 (All Passing)**
+**Total Tests: 712 (All Passing)**
 
 ## Implementation Status: 100% Feature Complete
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  FURLOW v0.2.0 STATUS                   │
+│                  FURLOW v1.0.0 STATUS                   │
 ├─────────────────────────────────────────────────────────┤
 │ Core Runtime          ████████████████████████  100%    │
 │ Action Handlers       ████████████████████████  100%    │
@@ -39,7 +39,7 @@ As of 2026-02-03, all 9 packages are published to npm with comprehensive test co
 │ CLI Commands          ████████████████████████  100%    │
 │ Runtime Spec          ████████████████████████  100%    │
 │ Compliance Tests      ████████████████████████  100%    │
-│ Documentation         ░░░░░░░░░░░░░░░░░░░░░░░░    0%    │
+│ Documentation         ████████░░░░░░░░░░░░░░░░   33%    │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -117,16 +117,18 @@ As of 2026-02-03, all 9 packages are published to npm with comprehensive test co
 | **SQLite** | File-based, better-sqlite3 |
 | **PostgreSQL** | Full SQL support, connection pooling |
 
-### External Pipes
+### External Pipes (8 Types)
 
 | Pipe | Protocol | Features |
 |------|----------|----------|
-| **HTTP** | REST | GET, POST, PUT, PATCH, DELETE with headers |
-| **WebSocket** | WS | Bidirectional messaging, auto-reconnect |
-| **Webhook** | HTTP | Discord webhook formatting |
-| **MQTT** | MQTT | Pub/sub messaging |
-| **TCP** | TCP | Raw socket connections |
-| **UDP** | UDP | Datagram messaging |
+| **HTTP** | REST | GET, POST, PUT, PATCH, DELETE, auth, rate limiting, retry |
+| **WebSocket** | WS | Bidirectional messaging, auto-reconnect, heartbeat |
+| **Webhook** | HTTP | Receive/send webhooks, HMAC verification |
+| **MQTT** | MQTT | Pub/sub, QoS levels, wildcards, Last Will |
+| **TCP** | TCP | Client/server modes, request-response pattern |
+| **UDP** | UDP | Broadcast, multicast, datagram messaging |
+| **Database** | SQL | SQLite/PostgreSQL/Memory, CRUD, change events |
+| **File** | FS | File watching, glob patterns, hot reload |
 
 ### Builtin Modules (14)
 
@@ -177,7 +179,11 @@ furlow/
 │   │   ├── sqlite/               # SQLite
 │   │   └── postgres/             # PostgreSQL
 │   ├── core/
-│   │   ├── parser/               # YAML loading & validation
+│   │   ├── parser/               # YAML loading, normalization & validation
+│   │   │   ├── loader.ts         # loadSpec() with import resolution
+│   │   │   ├── normalize.ts      # Shorthand → schema action normalization
+│   │   │   ├── env.ts            # Environment variable resolution
+│   │   │   └── resolver.ts       # Import path resolution
 │   │   ├── expression/           # Jexl evaluator + 69 functions + caching
 │   │   ├── actions/
 │   │   │   ├── handlers/         # 84 action handlers
@@ -228,6 +234,16 @@ The `RUNTIME_SPEC.md` document (2,346 lines) defines the complete FURLOW runtime
 | **Action System** | Complete reference for all 84 actions with schemas |
 | **Event System** | Discord gateway events + FURLOW high-level events |
 | **Flow System** | Flow definitions, parameters, control flow semantics |
+
+### Processing Pipeline
+
+FURLOW specs are processed in this order (see `RUNTIME_SPEC.md` Section 2.4):
+
+```
+Load YAML → Resolve Imports → Resolve Env Vars → NORMALIZE → Validate Schema → Execute
+```
+
+**Critical**: Action normalization (shorthand → schema format) happens **before** schema validation. This allows user-friendly YAML syntax while maintaining strict schema compliance.
 
 ### Compliance Test Specs
 
@@ -283,7 +299,9 @@ The codebase is 100% feature complete. The only remaining work is user-facing do
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| README.md | Project overview, quick start | ❌ Needs writing |
+| README.md | Project overview, quick start | ✅ Complete |
+| CLI README | @furlow/cli npm package docs | ✅ Complete |
+| Pipes Reference | @furlow/pipes documentation | ✅ Complete (~850 lines) |
 | Getting Started | Tutorial for new users | ❌ Needs writing |
 | YAML Reference | Complete spec syntax | ❌ Needs writing |
 | Actions Reference | All 84 actions | ❌ Needs writing |
@@ -292,9 +310,26 @@ The codebase is 100% feature complete. The only remaining work is user-facing do
 | API Reference | Package APIs | ❌ Needs writing |
 | Examples | Bot examples | ❌ Needs writing |
 
+#### Recently Completed Documentation
+
+**CLI README** (`apps/cli/README.md`):
+- Complete npm package documentation for `@furlow/cli`
+- All 7 CLI commands documented with options tables
+- Quick start guide and example bot
+- Links to main repo and related packages
+- Fixed main README to use correct install command (`@furlow/cli`)
+
+**Pipes Reference** (`docs/packages/pipes.md`):
+- Complete documentation for all 8 pipe types (HTTP, WebSocket, Webhook, MQTT, TCP, UDP, Database, File)
+- Configuration tables, auth types, events, and options for each pipe
+- Practical YAML examples for common use cases
+- Added to README features list and documentation table
+- Added Packages section to sidebar
+
 ## Git History
 
 ```
+f770958 v0.2.1: Complete documentation and voice features
 7dc56bb docs: update HANDOFF.md with v0.2.0 status and remaining work audit
 fed98ce feat: implement complete action system with 84 handlers
 39f1388 feat: implement remaining features and polish for npm publish

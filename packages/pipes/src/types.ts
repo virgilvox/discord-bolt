@@ -162,3 +162,59 @@ export interface UdpPipeConfig {
     actions: unknown[];
   }[];
 }
+
+/** Database adapter type */
+export type DatabaseAdapter = 'sqlite' | 'postgres' | 'memory';
+
+/** Database event type */
+export type DatabaseEventType = 'insert' | 'update' | 'delete';
+
+/** Database event */
+export interface DatabaseEvent {
+  type: DatabaseEventType;
+  table: string;
+  data: Record<string, unknown>;
+  oldData?: Record<string, unknown>;
+}
+
+/** Database pipe configuration */
+export interface DatabasePipeConfig {
+  type: 'database';
+  adapter: DatabaseAdapter;
+  connection: string | Record<string, unknown>;
+  tables?: string[];
+  handlers?: {
+    event: DatabaseEventType | 'change';
+    table?: string;
+    when?: string;
+    actions: unknown[];
+  }[];
+}
+
+/** File event type */
+export type FileEventType = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
+
+/** File event */
+export interface FileEvent {
+  type: FileEventType;
+  path: string;
+  stats?: {
+    size: number;
+    mtime: Date;
+    isDirectory: boolean;
+  };
+}
+
+/** File pipe configuration */
+export interface FilePipeConfig {
+  type: 'file';
+  paths: string[];
+  ignore?: string[];
+  persistent?: boolean;
+  usePolling?: boolean;
+  handlers?: {
+    event: FileEventType | 'all';
+    when?: string;
+    actions: unknown[];
+  }[];
+}
