@@ -803,7 +803,7 @@ flows:
           scope: global
 
       - batch:
-          items: "${values(state.global.results)}"
+          items: "${values(state.results)}"
           as: result
           actions:
             - flow_if:
@@ -815,14 +815,14 @@ flows:
                       scope: global
 
       - log:
-          message: "Full compliance tests completed: ${state.global.passedCount}/18 passed"
+          message: "Full compliance tests completed: ${state.passedCount}/18 passed"
           level: info
 
       - return:
           value:
-            passed: "${state.global.passedCount}"
+            passed: "${state.passedCount}"
             total: 18
-            results: "${state.global.results}"
+            results: "${state.results}"
 
   # ===========================================
   # COMPLETE COMPLIANCE CHECK
@@ -918,9 +918,13 @@ commands:
   - name: run-full-compliance
     description: "Run full compliance test suite"
     actions:
+      # Defer first - tests take longer than 3 seconds
+      - defer:
+          ephemeral: true
       - call_flow:
           flow: run_complete_compliance
           as: results
+      # reply uses followUp when deferred
       - reply:
           content: |
             **Full Compliance Test Results**
@@ -928,7 +932,6 @@ commands:
             **Tests Passed:** ${results.fullTests.passed}/${results.fullTests.total}
             **Compliance Level:** ${results.complianceLevel}
             **Total Actions Supported:** ${results.totalActions}
-          ephemeral: true
 
 # Event handlers for testing
 events:
