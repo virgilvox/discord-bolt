@@ -154,8 +154,11 @@ export class EventRouter {
       }
     }
 
+    // Normalize actions from YAML shorthand to schema format
+    const normalizedActions = normalizeActions(handler.actions);
+
     // Execute actions
-    await executor.executeSequence(handler.actions, context);
+    await executor.executeSequence(normalizedActions, context);
 
     // Handle once
     if (registered.once) {
@@ -203,6 +206,39 @@ export class EventRouter {
     this.debounceTimers.clear();
     this.throttleTimers.clear();
   }
+}
+
+/**
+ * Normalize actions from YAML shorthand format to schema format
+ * YAML allows: { reply: { content: "..." } }
+ * Schema expects: { action: "reply", content: "..." }
+ */
+function normalizeActions(actions: any[]): any[] {
+  return actions.map((action) => {
+    // If action already has 'action' property, it's in schema format
+    if (action.action) {
+      return action;
+    }
+
+    // Convert shorthand to schema format
+    for (const [key, value] of Object.entries(action)) {
+      if (key === 'when' || key === 'error_handler') continue;
+
+      // Found the action type
+      const normalized: any = {
+        action: key,
+        ...((typeof value === 'object' && value !== null) ? value : {}),
+      };
+
+      // Copy over when and error_handler if present
+      if (action.when) normalized.when = action.when;
+      if (action.error_handler) normalized.error_handler = action.error_handler;
+
+      return normalized;
+    }
+
+    return action;
+  });
 }
 
 /**

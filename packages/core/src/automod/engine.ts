@@ -91,7 +91,8 @@ export class AutomodEngine {
         },
       };
 
-      await executor.executeSequence(match.rule.actions, matchContext as ActionContext);
+      const normalizedActions = normalizeActions(match.rule.actions);
+      await executor.executeSequence(normalizedActions, matchContext as ActionContext);
     }
   }
 
@@ -247,6 +248,39 @@ export class AutomodEngine {
   isEnabled(): boolean {
     return this.enabled;
   }
+}
+
+/**
+ * Normalize actions from YAML shorthand format to schema format
+ * YAML allows: { reply: { content: "..." } }
+ * Schema expects: { action: "reply", content: "..." }
+ */
+function normalizeActions(actions: any[]): any[] {
+  return actions.map((action) => {
+    // If action already has 'action' property, it's in schema format
+    if (action.action) {
+      return action;
+    }
+
+    // Convert shorthand to schema format
+    for (const [key, value] of Object.entries(action)) {
+      if (key === 'when' || key === 'error_handler') continue;
+
+      // Found the action type
+      const normalized: any = {
+        action: key,
+        ...((typeof value === 'object' && value !== null) ? value : {}),
+      };
+
+      // Copy over when and error_handler if present
+      if (action.when) normalized.when = action.when;
+      if (action.error_handler) normalized.error_handler = action.error_handler;
+
+      return normalized;
+    }
+
+    return action;
+  });
 }
 
 /**

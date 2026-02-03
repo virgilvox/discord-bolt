@@ -139,9 +139,10 @@ export class CronScheduler {
         }
       }
 
-      // Execute actions
+      // Normalize and execute actions
       try {
-        await executor.executeSequence(job.config.actions, context);
+        const normalizedActions = normalizeActions(job.config.actions);
+        await executor.executeSequence(normalizedActions, context);
       } catch (err) {
         console.error(`Cron job "${job.id}" failed:`, err);
       }
@@ -198,6 +199,39 @@ export class CronScheduler {
   isRunning(): boolean {
     return this.running;
   }
+}
+
+/**
+ * Normalize actions from YAML shorthand format to schema format
+ * YAML allows: { reply: { content: "..." } }
+ * Schema expects: { action: "reply", content: "..." }
+ */
+function normalizeActions(actions: any[]): any[] {
+  return actions.map((action) => {
+    // If action already has 'action' property, it's in schema format
+    if (action.action) {
+      return action;
+    }
+
+    // Convert shorthand to schema format
+    for (const [key, value] of Object.entries(action)) {
+      if (key === 'when' || key === 'error_handler') continue;
+
+      // Found the action type
+      const normalized: any = {
+        action: key,
+        ...((typeof value === 'object' && value !== null) ? value : {}),
+      };
+
+      // Copy over when and error_handler if present
+      if (action.when) normalized.when = action.when;
+      if (action.error_handler) normalized.error_handler = action.error_handler;
+
+      return normalized;
+    }
+
+    return action;
+  });
 }
 
 /**

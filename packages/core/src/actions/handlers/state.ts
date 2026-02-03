@@ -1,0 +1,425 @@
+/**
+ * State action handlers
+ */
+
+import type { ActionRegistry } from '../registry.js';
+import type { ActionHandler, ActionContext, ActionResult } from '../types.js';
+import type { HandlerDependencies } from './index.js';
+import type {
+  SetAction,
+  IncrementAction,
+  DecrementAction,
+  ListPushAction,
+  ListRemoveAction,
+  SetMapAction,
+  DeleteMapAction,
+} from '@furlow/schema';
+import type { StateManager } from '../../state/manager.js';
+
+/**
+ * Get the state context for a given scope
+ */
+function getStateContext(
+  scope: string | undefined,
+  context: ActionContext
+): { guildId?: string; channelId?: string; userId?: string } {
+  const guildId = context.guildId || (context.guild as any)?.id;
+  const channelId = context.channelId || (context.channel as any)?.id;
+  const userId = context.userId || (context.user as any)?.id;
+
+  switch (scope) {
+    case 'global':
+      return {};
+    case 'guild':
+      return { guildId };
+    case 'channel':
+      return { guildId, channelId };
+    case 'user':
+      return { userId };
+    case 'member':
+      return { guildId, userId };
+    default:
+      return { guildId };
+  }
+}
+
+/**
+ * Set action handler
+ */
+const setHandler: ActionHandler<SetAction> = {
+  name: 'set',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator, stateManager } = deps;
+
+    const key = config.key || config.var;
+    if (!key) {
+      return { success: false, error: new Error('Variable name (key or var) is required') };
+    }
+
+    // Evaluate the value
+    let value: unknown;
+    if (typeof config.value === 'string' && config.value.includes('${')) {
+      // It's a template string
+      value = await evaluator.interpolate(config.value, context);
+    } else if (typeof config.value === 'string' && !config.value.startsWith('"')) {
+      // It might be an expression
+      try {
+        value = await evaluator.evaluate(config.value, context);
+      } catch {
+        // If evaluation fails, use as literal string
+        value = config.value;
+      }
+    } else {
+      value = config.value;
+    }
+
+    // If we have a state manager, use it for persistent state
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      await stateManager.set(key, value, stateContext);
+    }
+
+    // Also set in context.state for immediate access
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    (context.state as Record<string, unknown>)[key] = value;
+
+    // Store result in variable if requested
+    if (config.as) {
+      (context as Record<string, unknown>)[config.as] = value;
+    }
+
+    return { success: true, data: value };
+  },
+};
+
+/**
+ * Increment action handler
+ */
+const incrementHandler: ActionHandler<IncrementAction> = {
+  name: 'increment',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { stateManager } = deps;
+
+    const key = config.var;
+    const by = config.by ?? 1;
+
+    // If we have a state manager, use it
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const newValue = await stateManager.increment(key, by, stateContext);
+
+      // Update context.state
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      (context.state as Record<string, unknown>)[key] = newValue;
+
+      return { success: true, data: newValue };
+    }
+
+    // Fallback to context.state only
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    const current = (context.state as Record<string, unknown>)[key] as number || 0;
+    const newValue = current + by;
+    (context.state as Record<string, unknown>)[key] = newValue;
+
+    return { success: true, data: newValue };
+  },
+};
+
+/**
+ * Decrement action handler
+ */
+const decrementHandler: ActionHandler<DecrementAction> = {
+  name: 'decrement',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { stateManager } = deps;
+
+    const key = config.var;
+    const by = config.by ?? 1;
+
+    // If we have a state manager, use it
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const newValue = await stateManager.decrement(key, by, stateContext);
+
+      // Update context.state
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      (context.state as Record<string, unknown>)[key] = newValue;
+
+      return { success: true, data: newValue };
+    }
+
+    // Fallback to context.state only
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    const current = (context.state as Record<string, unknown>)[key] as number || 0;
+    const newValue = current - by;
+    (context.state as Record<string, unknown>)[key] = newValue;
+
+    return { success: true, data: newValue };
+  },
+};
+
+/**
+ * List push action handler
+ */
+const listPushHandler: ActionHandler<ListPushAction> = {
+  name: 'list_push',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator, stateManager } = deps;
+
+    const key = config.key || config.var;
+    if (!key) {
+      return { success: false, error: new Error('Variable name (key or var) is required') };
+    }
+
+    // Evaluate the value
+    let value: unknown;
+    if (typeof config.value === 'string') {
+      try {
+        value = await evaluator.evaluate(String(config.value), context);
+      } catch {
+        value = config.value;
+      }
+    } else {
+      value = config.value;
+    }
+
+    // Get current list
+    let list: unknown[];
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const current = await stateManager.get<unknown[]>(key, stateContext);
+      list = Array.isArray(current) ? [...current] : [];
+    } else {
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      const current = (context.state as Record<string, unknown>)[key];
+      list = Array.isArray(current) ? [...current] : [];
+    }
+
+    // Push value
+    list.push(value);
+
+    // Save
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      await stateManager.set(key, list, stateContext);
+    }
+
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    (context.state as Record<string, unknown>)[key] = list;
+
+    return { success: true, data: list };
+  },
+};
+
+/**
+ * List remove action handler
+ */
+const listRemoveHandler: ActionHandler<ListRemoveAction> = {
+  name: 'list_remove',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator, stateManager } = deps;
+
+    const key = config.key || config.var;
+    if (!key) {
+      return { success: false, error: new Error('Variable name (key or var) is required') };
+    }
+
+    // Get current list
+    let list: unknown[];
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const current = await stateManager.get<unknown[]>(key, stateContext);
+      list = Array.isArray(current) ? [...current] : [];
+    } else {
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      const current = (context.state as Record<string, unknown>)[key];
+      list = Array.isArray(current) ? [...current] : [];
+    }
+
+    // Remove by index or value
+    if (config.index !== undefined) {
+      let index: number;
+      if (typeof config.index === 'string') {
+        index = await evaluator.evaluate<number>(config.index, context);
+      } else {
+        index = config.index;
+      }
+      list.splice(index, 1);
+    } else if (config.value !== undefined) {
+      let value: unknown;
+      if (typeof config.value === 'string') {
+        try {
+          value = await evaluator.evaluate(String(config.value), context);
+        } catch {
+          value = config.value;
+        }
+      } else {
+        value = config.value;
+      }
+      const index = list.indexOf(value);
+      if (index !== -1) {
+        list.splice(index, 1);
+      }
+    }
+
+    // Save
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      await stateManager.set(key, list, stateContext);
+    }
+
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    (context.state as Record<string, unknown>)[key] = list;
+
+    return { success: true, data: list };
+  },
+};
+
+/**
+ * Set map action handler
+ */
+const setMapHandler: ActionHandler<SetMapAction> = {
+  name: 'set_map',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator, stateManager } = deps;
+
+    const key = config.key || config.var;
+    if (!key) {
+      return { success: false, error: new Error('Variable name (key or var) is required') };
+    }
+
+    // Evaluate the map key
+    const mapKey = await evaluator.interpolate(String(config.map_key), context);
+
+    // Evaluate the value
+    let value: unknown;
+    if (typeof config.value === 'string') {
+      try {
+        value = await evaluator.evaluate(String(config.value), context);
+      } catch {
+        value = config.value;
+      }
+    } else {
+      value = config.value;
+    }
+
+    // Get current map
+    let map: Record<string, unknown>;
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const current = await stateManager.get<Record<string, unknown>>(key, stateContext);
+      map = typeof current === 'object' && current !== null ? { ...current } : {};
+    } else {
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      const current = (context.state as Record<string, unknown>)[key];
+      map = typeof current === 'object' && current !== null ? { ...(current as Record<string, unknown>) } : {};
+    }
+
+    // Set value
+    map[mapKey] = value;
+
+    // Save
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      await stateManager.set(key, map, stateContext);
+    }
+
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    (context.state as Record<string, unknown>)[key] = map;
+
+    return { success: true, data: map };
+  },
+};
+
+/**
+ * Delete map action handler
+ */
+const deleteMapHandler: ActionHandler<DeleteMapAction> = {
+  name: 'delete_map',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator, stateManager } = deps;
+
+    const key = config.key || config.var;
+    if (!key) {
+      return { success: false, error: new Error('Variable name (key or var) is required') };
+    }
+
+    // Evaluate the map key
+    const mapKey = await evaluator.interpolate(String(config.map_key), context);
+
+    // Get current map
+    let map: Record<string, unknown>;
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      const current = await stateManager.get<Record<string, unknown>>(key, stateContext);
+      map = typeof current === 'object' && current !== null ? { ...current } : {};
+    } else {
+      if (!context.state) {
+        (context as any).state = {};
+      }
+      const current = (context.state as Record<string, unknown>)[key];
+      map = typeof current === 'object' && current !== null ? { ...(current as Record<string, unknown>) } : {};
+    }
+
+    // Delete value
+    delete map[mapKey];
+
+    // Save
+    if (stateManager) {
+      const stateContext = getStateContext(config.scope, context);
+      await stateManager.set(key, map, stateContext);
+    }
+
+    if (!context.state) {
+      (context as any).state = {};
+    }
+    (context.state as Record<string, unknown>)[key] = map;
+
+    return { success: true, data: map };
+  },
+};
+
+/**
+ * Register all state handlers
+ */
+export function registerStateHandlers(
+  registry: ActionRegistry,
+  deps: HandlerDependencies
+): void {
+  registry.register(setHandler);
+  registry.register(incrementHandler);
+  registry.register(decrementHandler);
+  registry.register(listPushHandler);
+  registry.register(listRemoveHandler);
+  registry.register(setMapHandler);
+  registry.register(deleteMapHandler);
+}

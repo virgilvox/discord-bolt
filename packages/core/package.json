@@ -1,6 +1,6 @@
 {
   "name": "@furlow/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Core runtime engine for FURLOW Discord bot framework",
   "keywords": [
     "furlow",
@@ -32,6 +32,10 @@
     "./actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js"
+    },
+    "./actions/handlers": {
+      "types": "./dist/actions/handlers/index.d.ts",
+      "import": "./dist/actions/handlers/index.js"
     },
     "./events": {
       "types": "./dist/events/index.d.ts",
@@ -108,7 +112,8 @@
   },
   "peerDependencies": {
     "@furlow/storage": "workspace:*",
-    "canvas": "^2.11.0"
+    "canvas": "^2.11.0",
+    "discord.js": "^14.14.0"
   },
   "peerDependenciesMeta": {
     "@furlow/storage": {
@@ -116,6 +121,9 @@
     },
     "canvas": {
       "optional": true
+    },
+    "discord.js": {
+      "optional": false
     }
   },
   "optionalDependencies": {

@@ -38,7 +38,13 @@ export class FlowEngine {
       parameters.set(param.name, param);
     }
 
-    this.flows.set(flow.name, { definition: flow, parameters });
+    // Normalize actions from YAML shorthand to schema format
+    const normalizedFlow: FlowDefinition = {
+      ...flow,
+      actions: normalizeActionsDeep(flow.actions),
+    };
+
+    this.flows.set(flow.name, { definition: normalizedFlow, parameters });
   }
 
   /**
@@ -363,6 +369,102 @@ export class FlowEngine {
   clear(): void {
     this.flows.clear();
   }
+}
+
+/**
+ * Normalize actions from YAML shorthand format to schema format, recursively
+ * YAML allows: { reply: { content: "..." } }
+ * Schema expects: { action: "reply", content: "..." }
+ */
+function normalizeActionsDeep(actions: Action[]): Action[] {
+  return actions.map((action) => {
+    // If action already has 'action' property, it's in schema format
+    // But we still need to normalize nested actions
+    if ((action as any).action) {
+      return normalizeNestedActions(action as any);
+    }
+
+    // Convert shorthand to schema format
+    for (const [key, value] of Object.entries(action)) {
+      if (key === 'when' || key === 'error_handler') continue;
+
+      // Found the action type
+      const normalized: any = {
+        action: key,
+        ...((typeof value === 'object' && value !== null) ? value : {}),
+      };
+
+      // Copy over when and error_handler if present
+      if ((action as any).when) normalized.when = (action as any).when;
+      if ((action as any).error_handler) normalized.error_handler = (action as any).error_handler;
+
+      // Normalize nested actions in control flow structures
+      return normalizeNestedActions(normalized);
+    }
+
+    return action;
+  });
+}
+
+/**
+ * Normalize nested actions within control flow structures
+ */
+function normalizeNestedActions(action: any): any {
+  const result = { ...action };
+
+  // flow_if - then/else branches
+  if (action.then && Array.isArray(action.then)) {
+    result.then = normalizeActionsDeep(action.then);
+  }
+  if (action.else && Array.isArray(action.else)) {
+    result.else = normalizeActionsDeep(action.else);
+  }
+
+  // flow_switch - cases and default
+  if (action.cases && typeof action.cases === 'object') {
+    result.cases = {};
+    for (const [key, caseActions] of Object.entries(action.cases)) {
+      if (Array.isArray(caseActions)) {
+        result.cases[key] = normalizeActionsDeep(caseActions as Action[]);
+      }
+    }
+  }
+  if (action.default && Array.isArray(action.default)) {
+    result.default = normalizeActionsDeep(action.default);
+  }
+
+  // flow_while - do actions
+  if (action.do && Array.isArray(action.do)) {
+    result.do = normalizeActionsDeep(action.do);
+  }
+
+  // repeat - actions
+  if (action.actions && Array.isArray(action.actions)) {
+    result.actions = normalizeActionsDeep(action.actions);
+  }
+
+  // parallel - actions
+  if (action.action === 'parallel' && action.actions && Array.isArray(action.actions)) {
+    result.actions = normalizeActionsDeep(action.actions);
+  }
+
+  // batch - action (template for each item)
+  if (action.template && Array.isArray(action.template)) {
+    result.template = normalizeActionsDeep(action.template);
+  }
+
+  // try - try/catch/finally
+  if (action.try && Array.isArray(action.try)) {
+    result.try = normalizeActionsDeep(action.try);
+  }
+  if (action.catch && Array.isArray(action.catch)) {
+    result.catch = normalizeActionsDeep(action.catch);
+  }
+  if (action.finally && Array.isArray(action.finally)) {
+    result.finally = normalizeActionsDeep(action.finally);
+  }
+
+  return result;
 }
 
 /**

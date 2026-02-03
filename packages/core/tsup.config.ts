@@ -6,6 +6,7 @@ export default defineConfig({
     'src/parser/index.ts',
     'src/expression/index.ts',
     'src/actions/index.ts',
+    'src/actions/handlers/index.ts',
     'src/events/index.ts',
     'src/flows/index.ts',
     'src/state/index.ts',
@@ -23,5 +24,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
-  external: ['@furlow/schema', '@furlow/storage'],
+  external: ['@furlow/schema', '@furlow/storage', 'discord.js'],
 });
