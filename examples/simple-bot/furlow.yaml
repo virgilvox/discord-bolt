@@ -1,0 +1,167 @@
+# Simple FURLOW Bot Example
+# A basic bot demonstrating core features
+
+version: "0.1"
+
+identity:
+  name: "SimpleBot"
+
+presence:
+  status: online
+  activity:
+    type: watching
+    text: "for /help"
+
+intents:
+  auto: true
+
+state:
+  storage:
+    type: sqlite
+    path: ./bot.db
+
+  variables:
+    command_count:
+      type: number
+      scope: global
+      default: 0
+
+# Commands
+commands:
+  # Basic ping command
+  - name: ping
+    description: Check if the bot is responsive
+    actions:
+      - action: reply
+        content: "Pong! Latency: ${client.ping}ms"
+        ephemeral: true
+
+  # Hello command with user mention
+  - name: hello
+    description: Say hello to someone
+    options:
+      - name: user
+        description: The user to greet
+        type: user
+        required: false
+    actions:
+      - action: reply
+        content: "Hello, ${args.user ? '<@' + args.user.id + '>' : member.display_name}! 👋"
+
+  # Echo command
+  - name: echo
+    description: Echo a message
+    options:
+      - name: message
+        description: The message to echo
+        type: string
+        required: true
+    actions:
+      - action: send_message
+        content: "${args.message}"
+      - action: delete_message
+        delay: 100ms
+
+  # Server info command
+  - name: serverinfo
+    description: Get information about this server
+    actions:
+      - action: reply
+        embed:
+          title: "${guild.name}"
+          thumbnail: "${guild.icon}"
+          color: "#5865F2"
+          fields:
+            - name: "Owner"
+              value: "<@${guild.owner_id}>"
+              inline: true
+            - name: "Members"
+              value: "${guild.member_count}"
+              inline: true
+            - name: "Created"
+              value: "${timestamp(guild.created_at, 'relative')}"
+              inline: true
+            - name: "Boost Level"
+              value: "Tier ${guild.premium_tier}"
+              inline: true
+          footer:
+            text: "ID: ${guild.id}"
+
+  # User info command
+  - name: userinfo
+    description: Get information about a user
+    options:
+      - name: user
+        description: The user to look up
+        type: user
+        required: false
+    actions:
+      - action: reply
+        embed:
+          title: "${args.user ? args.user.username : user.username}"
+          thumbnail: "${args.user ? args.user.avatar : user.avatar}"
+          color: "#5865F2"
+          fields:
+            - name: "ID"
+              value: "${args.user ? args.user.id : user.id}"
+              inline: true
+            - name: "Created"
+              value: "${timestamp(args.user ? args.user.created_at : user.created_at, 'relative')}"
+              inline: true
+          timestamp: now
+
+  # Roll dice command
+  - name: roll
+    description: Roll some dice
+    options:
+      - name: dice
+        description: Number of dice (1-10)
+        type: integer
+        required: false
+        min_value: 1
+        max_value: 10
+      - name: sides
+        description: Sides per die (2-100)
+        type: integer
+        required: false
+        min_value: 2
+        max_value: 100
+    actions:
+      - action: set
+        var: dice
+        value: "${args.dice || 1}"
+        scope: channel
+      - action: set
+        var: sides
+        value: "${args.sides || 6}"
+        scope: channel
+      - action: set
+        var: rolls
+        value: "${range(1, dice + 1) | map('random(1, sides)')}"
+        scope: channel
+      - action: reply
+        content: "🎲 Rolling ${dice}d${sides}: **${rolls | join(', ')}** = **${rolls | reduce((a, b) => a + b, 0)}**"
+
+# Event handlers
+events:
+  # Ready event
+  - event: ready
+    actions:
+      - action: log
+        level: info
+        message: "Bot is ready! Logged in as ${client.user.tag}"
+
+  # Member join
+  - event: member_join
+    actions:
+      - action: log
+        level: info
+        message: "${member.display_name} joined ${guild.name}"
+
+  # Command counter
+  - event: interaction_create
+    when: "${interaction.type == 'command'}"
+    actions:
+      - action: increment
+        var: command_count
+        scope: global

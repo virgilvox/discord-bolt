@@ -1,0 +1,27 @@
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: [
+    'src/index.ts',
+    'src/parser/index.ts',
+    'src/expression/index.ts',
+    'src/actions/index.ts',
+    'src/events/index.ts',
+    'src/flows/index.ts',
+    'src/state/index.ts',
+    'src/automod/index.ts',
+    'src/scheduler/index.ts',
+    'src/locale/index.ts',
+    'src/components/index.ts',
+    'src/embeds/index.ts',
+    'src/canvas/index.ts',
+    'src/analytics/index.ts',
+    'src/errors/index.ts',
+  ],
+  format: ['esm'],
+  dts: true,
+  clean: true,
+  sourcemap: true,
+  splitting: false,
+  external: ['@furlow/schema', '@furlow/storage'],
+});

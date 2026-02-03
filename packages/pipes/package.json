@@ -1,0 +1,69 @@
+{
+  "name": "@furlow/pipes",
+  "version": "0.1.0",
+  "description": "External integration pipes for FURLOW bot framework",
+  "keywords": ["furlow", "discord", "pipes", "http", "websocket", "mqtt"],
+  "license": "MIT",
+  "author": "Ossuary Dev",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./dist/http/index.d.ts",
+      "import": "./dist/http/index.js"
+    },
+    "./websocket": {
+      "types": "./dist/websocket/index.d.ts",
+      "import": "./dist/websocket/index.js"
+    },
+    "./mqtt": {
+      "types": "./dist/mqtt/index.d.ts",
+      "import": "./dist/mqtt/index.js"
+    },
+    "./tcp": {
+      "types": "./dist/tcp/index.d.ts",
+      "import": "./dist/tcp/index.js"
+    },
+    "./webhook": {
+      "types": "./dist/webhook/index.d.ts",
+      "import": "./dist/webhook/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    },
+    "./file": {
+      "types": "./dist/file/index.d.ts",
+      "import": "./dist/file/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist .turbo",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@furlow/core": "workspace:*",
+    "axios": "^1.6.0",
+    "chokidar": "^3.5.0",
+    "mqtt": "^5.3.0",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/ws": "^8.5.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  }
+}

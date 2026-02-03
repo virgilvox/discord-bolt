@@ -1,0 +1,135 @@
+# FURLOW Development Guide
+
+This is the development reference for the FURLOW Discord bot framework.
+
+## Project Overview
+
+FURLOW (named after the ship scrap builder in Farscape) is a declarative Discord bot framework that uses YAML specifications. The framework consists of:
+
+- **@furlow/core** - Runtime engine (parser, expression evaluator, actions, flows, state)
+- **@furlow/discord** - Discord.js adapter (client, gateway, interactions, voice)
+- **@furlow/schema** - JSON Schema definitions and TypeScript types
+- **@furlow/storage** - Database adapters (SQLite, PostgreSQL, memory)
+- **@furlow/builtins** - Pre-built bot components (moderation, welcome, tickets, etc.)
+- **@furlow/pipes** - External integrations (HTTP, WebSocket, MQTT, webhooks)
+- **@furlow/testing** - Test utilities and mocks
+- **furlow** (CLI) - Command-line interface
+
+## Architecture Principles
+
+1. **YAML is the source of truth** - Bot behavior is defined in YAML, not code
+2. **Expression language for logic** - Jexl-based expressions for conditions and transforms
+3. **Actions as primitives** - 100+ discrete actions that can be composed
+4. **Scoped state** - Variables scoped to global, guild, channel, user, or member
+5. **Flows for reuse** - Named action sequences that can be called
+
+## Development Commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Run tests
+pnpm test
+pnpm test:unit
+pnpm test:integration
+
+# Development mode with hot reload
+pnpm dev
+
+# Type checking
+pnpm typecheck
+
+# Linting
+pnpm lint
+
+# Format code
+pnpm format
+```
+
+## Package Structure
+
+Each package follows this structure:
+
+```
+packages/[name]/
+├── src/
+│   └── index.ts      # Main exports
+├── package.json
+├── tsconfig.json
+└── tsup.config.ts
+```
+
+## Coding Standards
+
+### TypeScript
+
+- Use strict mode
+- Prefer interfaces over types for object shapes
+- Use explicit return types on public APIs
+- No `any` - use `unknown` when type is truly unknown
+
+### Naming Conventions
+
+- Files: `kebab-case.ts`
+- Classes: `PascalCase`
+- Functions/variables: `camelCase`
+- Constants: `SCREAMING_SNAKE_CASE`
+- Types/Interfaces: `PascalCase`
+
+### Imports
+
+- Use ESM imports (`import`/`export`)
+- Prefer named exports over default exports
+- Group imports: external, internal, relative
+
+### Error Handling
+
+- Use custom error classes from `@furlow/core/errors`
+- Always include error codes
+- Provide actionable error messages with context
+
+## Action Implementation Pattern
+
+```typescript
+import type { ActionHandler, ActionContext } from '@furlow/core';
+
+export const sendMessageAction: ActionHandler<SendMessageConfig> = {
+  name: 'send_message',
+  schema: sendMessageSchema,
+  async execute(config, context) {
+    const channel = await context.resolveChannel(config.channel);
+    return channel.send(await context.interpolate(config.content));
+  },
+};
+```
+
+## Expression Functions
+
+All expression functions should:
+- Be pure (no side effects)
+- Handle null/undefined gracefully
+- Return consistent types
+
+## Testing
+
+- Use Vitest for all tests
+- Unit test files: `*.test.ts`
+- Integration test files: `*.integration.test.ts`
+- E2E test files: `*.e2e.test.ts`
+
+## Key Dependencies
+
+- discord.js v14 - Discord API
+- jexl - Expression language
+- yaml - YAML parsing with source maps
+- ajv - JSON Schema validation
+- better-sqlite3 - SQLite storage
+- @discordjs/voice - Voice support
+
+## File Extension
+
+FURLOW YAML files use `.furlow.yaml` or `.furlow.yml` extension. Legacy `.bolt.yaml` is also supported for migration.

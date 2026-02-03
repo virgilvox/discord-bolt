@@ -1,0 +1,236 @@
+# Getting Started with FURLOW
+
+FURLOW is a declarative Discord bot framework that lets you build bots using YAML specifications instead of code.
+
+## Installation
+
+### Prerequisites
+
+- Node.js 20 or later
+- A Discord bot token
+
+### Create a New Bot
+
+```bash
+# Install the FURLOW CLI globally
+npm install -g furlow
+
+# Create a new bot project
+furlow init my-bot
+
+# Navigate to the project
+cd my-bot
+
+# Copy the environment file and add your token
+cp .env.example .env
+# Edit .env with your DISCORD_TOKEN and DISCORD_CLIENT_ID
+```
+
+### Project Structure
+
+A basic FURLOW project looks like this:
+
+```
+my-bot/
+├── furlow.yaml          # Main configuration
+├── commands/            # Command definitions
+│   └── ping.yaml
+├── events/              # Event handlers
+│   └── ready.yaml
+├── flows/               # Reusable action sequences
+├── .env                 # Environment variables (secrets)
+└── package.json
+```
+
+## Your First Bot
+
+### Basic Configuration
+
+Create or edit `furlow.yaml`:
+
+```yaml
+version: "0.1"
+
+identity:
+  name: "MyBot"
+
+presence:
+  status: online
+  activity:
+    type: playing
+    text: "with FURLOW"
+
+intents:
+  auto: true
+
+commands:
+  - name: ping
+    description: Check bot latency
+    actions:
+      - action: reply
+        content: "Pong! 🏓"
+```
+
+### Run Your Bot
+
+```bash
+# Development mode (hot reload)
+furlow dev
+
+# Production mode
+furlow start
+```
+
+## Core Concepts
+
+### Commands
+
+Commands are slash commands that users can invoke:
+
+```yaml
+commands:
+  - name: greet
+    description: Greet a user
+    options:
+      - name: user
+        description: Who to greet
+        type: user
+        required: true
+    actions:
+      - action: reply
+        content: "Hello, ${args.user.username}!"
+```
+
+### Events
+
+Events let you respond to Discord events:
+
+```yaml
+events:
+  - event: member_join
+    actions:
+      - action: send_message
+        channel: "${guild.system_channel_id}"
+        content: "Welcome ${member.mention}! 🎉"
+```
+
+### Expressions
+
+Use `${...}` for dynamic values:
+
+```yaml
+content: "Hello ${user.username}! You joined ${timestamp(member.joined_at, 'relative')}"
+```
+
+Available contexts:
+- `user` - The user who triggered the action
+- `member` - Guild member info
+- `guild` - Server info
+- `channel` - Current channel
+- `message` - Message info (for message events)
+- `args` - Command arguments
+
+### Actions
+
+Actions are the building blocks of bot behavior:
+
+**Message Actions:**
+- `send_message` - Send a message
+- `reply` - Reply to an interaction
+- `edit_message` - Edit a message
+- `delete_message` - Delete a message
+- `add_reaction` - Add a reaction
+
+**Member Actions:**
+- `assign_role` - Give a role
+- `remove_role` - Remove a role
+- `kick` - Kick a member
+- `ban` - Ban a member
+- `timeout` - Timeout a member
+
+**State Actions:**
+- `set` - Set a variable
+- `increment` - Increment a number
+- `db_insert` - Insert database row
+- `db_query` - Query database
+
+**Flow Control:**
+- `flow_if` - Conditional execution
+- `call_flow` - Call a reusable flow
+- `wait` - Wait for a duration
+
+### Flows
+
+Flows are reusable action sequences:
+
+```yaml
+flows:
+  - name: send_welcome
+    parameters:
+      - name: member_id
+        type: string
+        required: true
+    actions:
+      - action: send_dm
+        user: "${args.member_id}"
+        content: "Welcome to the server!"
+```
+
+Call flows from other actions:
+
+```yaml
+- action: call_flow
+  flow: send_welcome
+  args:
+    member_id: "${member.id}"
+```
+
+## State Management
+
+### Variables
+
+Define persistent variables:
+
+```yaml
+state:
+  variables:
+    welcome_count:
+      type: number
+      scope: guild
+      default: 0
+```
+
+Scopes:
+- `global` - Shared across all servers
+- `guild` - Per-server
+- `channel` - Per-channel
+- `user` - Per-user (across servers)
+- `member` - Per-user-per-server
+
+### Tables
+
+Define database tables:
+
+```yaml
+state:
+  tables:
+    warnings:
+      columns:
+        id:
+          type: number
+          primary: true
+        user_id:
+          type: string
+          index: true
+        reason:
+          type: string
+        created_at:
+          type: timestamp
+```
+
+## Next Steps
+
+- Read the [Specification Reference](./specification.md)
+- Browse [Example Bots](../examples/)
+- Learn the [Expression Language](./expression-language.md)
+- Explore [Available Actions](./actions-reference.md)

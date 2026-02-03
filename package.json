@@ -1,0 +1,40 @@
+{
+  "name": "furlow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Declarative Discord Bot Framework - YAML-based specification runtime",
+  "keywords": ["discord", "bot", "yaml", "declarative", "framework"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ossuary-dev/furlow"
+  },
+  "license": "MIT",
+  "author": "Ossuary Dev",
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "dev": "turbo run dev",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "lint": "turbo run lint",
+    "prepare": "husky install",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@types/node": "^20.11.0",
+    "husky": "^9.0.0",
+    "prettier": "^3.2.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  },
+  "packageManager": "pnpm@8.14.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

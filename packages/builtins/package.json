@@ -1,0 +1,94 @@
+{
+  "name": "@furlow/builtins",
+  "version": "0.1.0",
+  "description": "Pre-built bot components for FURLOW framework",
+  "keywords": ["furlow", "discord", "builtins", "moderation", "tickets", "leveling"],
+  "license": "MIT",
+  "author": "Ossuary Dev",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./moderation": {
+      "types": "./dist/moderation/index.d.ts",
+      "import": "./dist/moderation/index.js"
+    },
+    "./welcome": {
+      "types": "./dist/welcome/index.d.ts",
+      "import": "./dist/welcome/index.js"
+    },
+    "./logging": {
+      "types": "./dist/logging/index.d.ts",
+      "import": "./dist/logging/index.js"
+    },
+    "./tickets": {
+      "types": "./dist/tickets/index.d.ts",
+      "import": "./dist/tickets/index.js"
+    },
+    "./reaction-roles": {
+      "types": "./dist/reaction-roles/index.d.ts",
+      "import": "./dist/reaction-roles/index.js"
+    },
+    "./leveling": {
+      "types": "./dist/leveling/index.d.ts",
+      "import": "./dist/leveling/index.js"
+    },
+    "./music": {
+      "types": "./dist/music/index.d.ts",
+      "import": "./dist/music/index.js"
+    },
+    "./starboard": {
+      "types": "./dist/starboard/index.d.ts",
+      "import": "./dist/starboard/index.js"
+    },
+    "./polls": {
+      "types": "./dist/polls/index.d.ts",
+      "import": "./dist/polls/index.js"
+    },
+    "./giveaways": {
+      "types": "./dist/giveaways/index.d.ts",
+      "import": "./dist/giveaways/index.js"
+    },
+    "./auto-responder": {
+      "types": "./dist/auto-responder/index.d.ts",
+      "import": "./dist/auto-responder/index.js"
+    },
+    "./afk": {
+      "types": "./dist/afk/index.d.ts",
+      "import": "./dist/afk/index.js"
+    },
+    "./reminders": {
+      "types": "./dist/reminders/index.d.ts",
+      "import": "./dist/reminders/index.js"
+    },
+    "./utilities": {
+      "types": "./dist/utilities/index.d.ts",
+      "import": "./dist/utilities/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "yaml"],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist .turbo",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@furlow/core": "workspace:*",
+    "@furlow/discord": "workspace:*",
+    "@furlow/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  }
+}
