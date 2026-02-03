@@ -3,7 +3,7 @@
  */
 
 import Database from 'better-sqlite3';
-import type { StorageAdapter, StoredValue, QueryOptions, TableDefinition } from '../types.js';
+import type { StorageAdapter, StoredValue, QueryOptions, TableDefinition, TableColumn } from '../types.js';
 
 export interface SQLiteOptions {
   path?: string;
@@ -67,13 +67,16 @@ export class SQLiteAdapter implements StorageAdapter {
       return null;
     }
 
-    return {
+    const result: StoredValue = {
       value: JSON.parse(row.value),
       type: row.type,
-      expiresAt: row.expires_at ?? undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
+    if (row.expires_at != null) {
+      result.expiresAt = row.expires_at;
+    }
+    return result;
   }
 
   async set(key: string, value: StoredValue): Promise<void> {
@@ -131,7 +134,8 @@ export class SQLiteAdapter implements StorageAdapter {
     const columns: string[] = [];
     const indexes: string[] = [];
 
-    for (const [colName, col] of Object.entries(definition.columns)) {
+    for (const [colName, columnDef] of Object.entries(definition.columns)) {
+      const col = columnDef as TableColumn;
       let sqlType: string;
       switch (col.type) {
         case 'string':

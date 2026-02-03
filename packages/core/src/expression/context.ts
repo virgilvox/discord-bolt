@@ -222,7 +222,7 @@ export function buildFullContext(options: {
   state?: Record<string, unknown>;
   extra?: Record<string, unknown>;
 }): FullContext {
-  const context: FullContext = buildBaseContext();
+  const context: FullContext = buildBaseContext() as FullContext;
 
   if (options.user) {
     context.user = buildUserContext(options.user);
@@ -256,9 +256,10 @@ export function buildFullContext(options: {
       options: {},
     };
 
-    if (options.interaction.isCommand()) {
+    if (options.interaction.isCommand() && 'options' in options.interaction) {
       const opts: Record<string, unknown> = {};
-      for (const opt of options.interaction.options.data) {
+      const cmdInteraction = options.interaction as unknown as { options: { data: Array<{ name: string; value: unknown }> } };
+      for (const opt of cmdInteraction.options.data) {
         opts[opt.name] = opt.value;
       }
       context.interaction.options = opts;

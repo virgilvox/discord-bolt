@@ -42,8 +42,11 @@ export function registerTransforms(jexl: Jexl.Jexl): void {
     const copy = [...(arr ?? [])];
     if (key) {
       return copy.sort((a, b) => {
-        const aVal = (a as Record<string, unknown>)?.[key];
-        const bVal = (b as Record<string, unknown>)?.[key];
+        const aVal = (a as Record<string, unknown>)?.[key] as string | number | null | undefined;
+        const bVal = (b as Record<string, unknown>)?.[key] as string | number | null | undefined;
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
         if (aVal < bVal) return -1;
         if (aVal > bVal) return 1;
         return 0;

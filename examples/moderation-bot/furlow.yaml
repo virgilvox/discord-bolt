@@ -1,0 +1,322 @@
+# Moderation Bot Example
+# A bot focused on server moderation with the moderation builtin
+
+version: "0.1"
+
+identity:
+  name: "ModBot"
+
+presence:
+  status: dnd
+  activity:
+    type: watching
+    text: "for rule breakers"
+
+intents:
+  - guilds
+  - guild_members
+  - guild_messages
+  - message_content
+  - guild_moderation
+
+state:
+  storage:
+    type: sqlite
+    path: ./data/moderation.db
+
+# Enable moderation builtin
+builtins:
+  moderation:
+    enabled: true
+    log_channel: "${env.MOD_LOG_CHANNEL}"
+    dm_on_action: true
+
+    mod_roles:
+      - "${env.MOD_ROLE}"
+      - "${env.ADMIN_ROLE}"
+
+    escalation:
+      enabled: true
+      thresholds:
+        - warnings: 3
+          action: mute
+          duration: "1h"
+        - warnings: 5
+          action: mute
+          duration: "24h"
+        - warnings: 7
+          action: kick
+        - warnings: 10
+          action: ban
+          duration: "7d"
+        - warnings: 15
+          action: ban
+
+    mute:
+      use_timeout: true
+      default_duration: "1h"
+
+    ban:
+      delete_messages: 1
+
+# Custom commands
+commands:
+  # Report a user
+  - name: report
+    description: Report a user to moderators
+    options:
+      - name: user
+        description: User to report
+        type: user
+        required: true
+      - name: reason
+        description: Reason for report
+        type: string
+        required: true
+    actions:
+      - send_message:
+          channel: "${env.REPORT_CHANNEL}"
+          embeds:
+            - title: "New User Report"
+              color: "#ff9900"
+              fields:
+                - name: "Reported User"
+                  value: "${options.user.mention} (${options.user.id})"
+                  inline: true
+                - name: "Reporter"
+                  value: "${user.mention}"
+                  inline: true
+                - name: "Channel"
+                  value: "${channel.mention}"
+                  inline: true
+                - name: "Reason"
+                  value: "${options.reason}"
+              timestamp: true
+          components:
+            - type: row
+              components:
+                - type: button
+                  style: danger
+                  label: "Warn User"
+                  custom_id: "report_warn_${options.user.id}"
+                - type: button
+                  style: secondary
+                  label: "Dismiss"
+                  custom_id: "report_dismiss"
+      - reply:
+          content: "Your report has been submitted. Thank you!"
+          ephemeral: true
+
+  # Quick mute command with presets
+  - name: quickmute
+    description: Quick mute with preset durations
+    options:
+      - name: user
+        description: User to mute
+        type: user
+        required: true
+      - name: duration
+        description: Mute duration
+        type: string
+        required: true
+        choices:
+          - name: "5 minutes"
+            value: "5m"
+          - name: "30 minutes"
+            value: "30m"
+          - name: "1 hour"
+            value: "1h"
+          - name: "6 hours"
+            value: "6h"
+          - name: "24 hours"
+            value: "24h"
+      - name: reason
+        description: Reason for mute
+        type: string
+        required: false
+    actions:
+      - timeout:
+          member: "${options.user.id}"
+          duration: "${options.duration}"
+          reason: "${options.reason ?? 'Quick mute by ' + user.username}"
+      - reply:
+          content: "Muted ${options.user.mention} for ${options.duration}"
+          ephemeral: true
+
+  # Lockdown command
+  - name: lockdown
+    description: Lock or unlock a channel
+    options:
+      - name: action
+        description: Lock or unlock
+        type: string
+        required: true
+        choices:
+          - name: "Lock"
+            value: "lock"
+          - name: "Unlock"
+            value: "unlock"
+      - name: channel
+        description: Channel to lock (default: current)
+        type: channel
+        required: false
+      - name: reason
+        description: Reason for lockdown
+        type: string
+        required: false
+    actions:
+      - flow_if:
+          condition: "${options.action == 'lock'}"
+          then:
+            - lock_channel:
+                channel: "${options.channel?.id ?? channel.id}"
+                reason: "${options.reason ?? 'Lockdown initiated'}"
+            - send_message:
+                channel: "${options.channel?.id ?? channel.id}"
+                embeds:
+                  - title: "Channel Locked"
+                    description: "This channel has been locked by a moderator."
+                    color: "#ff0000"
+                    fields:
+                      - name: "Reason"
+                        value: "${options.reason ?? 'No reason provided'}"
+                    footer:
+                      text: "Locked by ${user.username}"
+            - reply:
+                content: "Channel locked!"
+                ephemeral: true
+          else:
+            - unlock_channel:
+                channel: "${options.channel?.id ?? channel.id}"
+                reason: "${options.reason ?? 'Lockdown ended'}"
+            - send_message:
+                channel: "${options.channel?.id ?? channel.id}"
+                embeds:
+                  - title: "Channel Unlocked"
+                    description: "This channel has been unlocked."
+                    color: "#00ff00"
+            - reply:
+                content: "Channel unlocked!"
+                ephemeral: true
+
+  # Mass ban command (admin only)
+  - name: massban
+    description: Ban multiple users at once
+    default_member_permissions: administrator
+    options:
+      - name: users
+        description: User IDs separated by spaces
+        type: string
+        required: true
+      - name: reason
+        description: Reason for ban
+        type: string
+        required: true
+    actions:
+      - defer:
+          ephemeral: true
+      - batch:
+          items: "${split(options.users, ' ')}"
+          as: "user_id"
+          each:
+            - ban:
+                user: "${user_id}"
+                reason: "${options.reason} (Mass ban by ${user.username})"
+                delete_days: 1
+      - followup:
+          content: "Banned ${length(split(options.users, ' '))} users."
+
+# Event handlers
+events:
+  # Auto-delete messages with too many mentions
+  message_create:
+    - name: "anti_mass_mention"
+      condition: "length(message.mentions) > 5 && !member.roles|includes(env.MOD_ROLE)"
+      actions:
+        - delete_message:
+            channel: "${channel.id}"
+            message: "${message.id}"
+        - timeout:
+            member: "${user.id}"
+            duration: "5m"
+            reason: "Mass mention (auto-mod)"
+        - send_message:
+            channel: "${env.MOD_LOG_CHANNEL}"
+            content: "${user.mention} was auto-muted for mass mentioning"
+
+  # Log deleted messages
+  message_delete:
+    condition: "!message.author?.bot"
+    actions:
+      - send_message:
+          channel: "${env.MESSAGE_LOG_CHANNEL}"
+          embeds:
+            - title: "Message Deleted"
+              color: "#ff6b6b"
+              fields:
+                - name: "Author"
+                  value: "${message.author?.mention ?? 'Unknown'}"
+                  inline: true
+                - name: "Channel"
+                  value: "${channel.mention}"
+                  inline: true
+                - name: "Content"
+                  value: "${truncate(message.content ?? 'Unknown', 1000)}"
+              timestamp: true
+
+  # Handle report buttons
+  button_click:
+    - name: "report_warn"
+      condition: "startsWith(custom_id, 'report_warn_')"
+      actions:
+        - flow_if:
+            condition: "!member.roles|includes(env.MOD_ROLE)"
+            then:
+              - reply:
+                  content: "You don't have permission to do this."
+                  ephemeral: true
+            else:
+              - call_flow:
+                  name: "warn_from_report"
+                  args:
+                    user_id: "${replace(custom_id, 'report_warn_', '')}"
+                    moderator: "${user}"
+              - update_message:
+                  content: "Report handled by ${user.mention}"
+                  embeds: []
+                  components: []
+
+    - name: "report_dismiss"
+      condition: "custom_id == 'report_dismiss'"
+      actions:
+        - flow_if:
+            condition: "!member.roles|includes(env.MOD_ROLE)"
+            then:
+              - reply:
+                  content: "You don't have permission to do this."
+                  ephemeral: true
+            else:
+              - update_message:
+                  content: "Report dismissed by ${user.mention}"
+                  embeds: []
+                  components: []
+
+# Flows
+flows:
+  warn_from_report:
+    parameters:
+      - user_id
+      - moderator
+    actions:
+      - db_insert:
+          table: "mod_cases"
+          values:
+            guild_id: "${guild.id}"
+            user_id: "${user_id}"
+            moderator_id: "${moderator.id}"
+            type: "warn"
+            reason: "Warning from user report"
+            created_at: "${now()}"
+      - send_dm:
+          user: "${user_id}"
+          content: "You have received a warning in **${guild.name}** from a user report."

@@ -14,7 +14,10 @@ export default defineConfig({
     '@furlow/schema',
     '@furlow/storage',
     'express',
+    'express-session',
     'passport',
+    'passport-discord',
     'prom-client',
+    'ws',
   ],
 });

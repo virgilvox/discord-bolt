@@ -2,7 +2,7 @@
  * Scheduler types
  */
 
-import type { Expression, SimpleCondition } from './common.js';
+import type { SimpleCondition } from './common.js';
 import type { Action } from './actions.js';
 
 /** Cron job definition */

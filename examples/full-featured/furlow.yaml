@@ -1,0 +1,447 @@
+# Full-Featured FURLOW Bot Example
+# Demonstrates multiple builtins working together
+
+version: "0.1"
+
+identity:
+  name: "CommunityBot"
+
+presence:
+  status: online
+  activity:
+    type: playing
+    text: "${guild_count} servers | /help"
+
+intents:
+  - guilds
+  - guild_members
+  - guild_messages
+  - message_content
+  - guild_message_reactions
+  - guild_voice_states
+  - guild_presences
+  - guild_moderation
+
+state:
+  storage:
+    type: sqlite
+    path: ./data/community.db
+
+# ============================================
+# BUILTINS
+# ============================================
+
+builtins:
+  # Moderation
+  moderation:
+    enabled: true
+    log_channel: "${env.MOD_LOG_CHANNEL}"
+    dm_on_action: true
+    escalation:
+      enabled: true
+      thresholds:
+        - warnings: 3
+          action: mute
+          duration: "1h"
+        - warnings: 5
+          action: mute
+          duration: "1d"
+        - warnings: 10
+          action: ban
+
+  # Welcome messages
+  welcome:
+    enabled: true
+    channel: "${env.WELCOME_CHANNEL}"
+    message: |
+      Welcome to **${guild.name}**, ${user.mention}!
+
+      Please read <#${env.RULES_CHANNEL}> and enjoy your stay!
+    embed:
+      color: "#5865F2"
+      thumbnail:
+        url: "${user.avatarURL}"
+      footer:
+        text: "Member #${guild.memberCount}"
+    auto_roles:
+      - "${env.MEMBER_ROLE}"
+    goodbye:
+      enabled: true
+      channel: "${env.WELCOME_CHANNEL}"
+      message: "Goodbye ${user.username}. We'll miss you!"
+
+  # Leveling system
+  leveling:
+    enabled: true
+    xp_per_message:
+      min: 15
+      max: 25
+    xp_cooldown: 60
+    announce_channel: "${env.LEVELUP_CHANNEL}"
+    announce_message: |
+      Congratulations ${user.mention}! You reached **Level ${level}**!
+    rewards:
+      5:
+        roles: ["${env.LEVEL_5_ROLE}"]
+      10:
+        roles: ["${env.LEVEL_10_ROLE}"]
+        remove_roles: ["${env.LEVEL_5_ROLE}"]
+      25:
+        roles: ["${env.LEVEL_25_ROLE}"]
+        remove_roles: ["${env.LEVEL_10_ROLE}"]
+      50:
+        roles: ["${env.LEVEL_50_ROLE}"]
+        remove_roles: ["${env.LEVEL_25_ROLE}"]
+    multipliers:
+      roles:
+        "${env.BOOSTER_ROLE}": 1.5
+    rank_card:
+      enabled: true
+      generator: "rank_card"
+      generator_options:
+        style: "modern"
+
+  # Logging
+  logging:
+    enabled: true
+    channels:
+      messages: "${env.MESSAGE_LOG_CHANNEL}"
+      members: "${env.MEMBER_LOG_CHANNEL}"
+      moderation: "${env.MOD_LOG_CHANNEL}"
+      voice: "${env.VOICE_LOG_CHANNEL}"
+    events:
+      - message_delete
+      - message_edit
+      - member_join
+      - member_leave
+      - member_ban
+      - member_unban
+      - voice_join
+      - voice_leave
+      - role_add
+      - role_remove
+
+  # Reaction roles
+  reaction_roles:
+    enabled: true
+    messages:
+      - message_id: "${env.ROLE_MESSAGE_ID}"
+        channel_id: "${env.ROLES_CHANNEL}"
+        type: button
+        exclusive: false
+        roles:
+          - id: "${env.ANNOUNCEMENTS_ROLE}"
+            emoji: "bell"
+            label: "Announcements"
+          - id: "${env.EVENTS_ROLE}"
+            emoji: "calendar"
+            label: "Events"
+          - id: "${env.GIVEAWAYS_ROLE}"
+            emoji: "gift"
+            label: "Giveaways"
+
+  # Tickets
+  tickets:
+    enabled: true
+    category: "${env.TICKETS_CATEGORY}"
+    log_channel: "${env.TICKET_LOG_CHANNEL}"
+    support_roles:
+      - "${env.SUPPORT_ROLE}"
+    open_message: |
+      Thanks for opening a ticket, ${user.mention}!
+
+      Please describe your issue and a staff member will assist you shortly.
+    close_confirm: true
+    transcript: true
+    max_open: 3
+
+  # Starboard
+  starboard:
+    enabled: true
+    channel: "${env.STARBOARD_CHANNEL}"
+    emoji: "star"
+    threshold: 3
+    self_star: false
+    ignore_channels:
+      - "${env.STAFF_CHANNEL}"
+
+  # Auto-responder
+  auto_responder:
+    enabled: true
+    triggers:
+      - pattern: "(?i)^(hi|hello|hey)\\s*(bot)?$"
+        responses:
+          - "Hello there!"
+          - "Hey!"
+          - "Hi ${user.displayName}!"
+        chance: 100
+        cooldown: 30
+      - pattern: "(?i)good\\s*(morning|night|evening|afternoon)"
+        response: "Good ${match[1]} to you too, ${user.displayName}!"
+        chance: 100
+
+  # AFK
+  afk:
+    enabled: true
+    max_duration: "24h"
+    auto_remove: true
+
+  # Reminders
+  reminders:
+    enabled: true
+    max_per_user: 10
+    dm_delivery: true
+
+  # Utilities
+  utilities:
+    enabled: true
+    commands:
+      - avatar
+      - serverinfo
+      - userinfo
+      - roleinfo
+      - channelinfo
+      - emoji
+      - poll
+      - calculate
+
+# ============================================
+# CUSTOM COMMANDS
+# ============================================
+
+commands:
+  # Help command
+  - name: help
+    description: Get help with the bot
+    options:
+      - name: command
+        description: Get help for a specific command
+        type: string
+        required: false
+        autocomplete: true
+    actions:
+      - flow_if:
+          condition: "!options.command"
+          then:
+            - reply:
+                embeds:
+                  - title: "CommunityBot Help"
+                    description: |
+                      **Moderation**
+                      `/warn`, `/kick`, `/ban`, `/mute`, `/purge`
+
+                      **Leveling**
+                      `/rank`, `/leaderboard`, `/levels rewards`
+
+                      **Tickets**
+                      `/ticket new`, `/ticket close`
+
+                      **Fun**
+                      `/8ball`, `/roll`, `/choose`
+
+                      **Utility**
+                      `/avatar`, `/serverinfo`, `/userinfo`
+
+                      **Music**
+                      `/play`, `/skip`, `/queue`, `/volume`
+
+                      Use `/help <command>` for detailed info.
+                    color: "#5865F2"
+                    footer:
+                      text: "CommunityBot v1.0"
+          else:
+            - reply:
+                content: "Help for `/${options.command}` - Coming soon!"
+                ephemeral: true
+
+  # Suggestion command
+  - name: suggest
+    description: Submit a suggestion
+    options:
+      - name: suggestion
+        description: Your suggestion
+        type: string
+        required: true
+    actions:
+      - send_message:
+          channel: "${env.SUGGESTIONS_CHANNEL}"
+          embeds:
+            - title: "New Suggestion"
+              description: "${options.suggestion}"
+              color: "#ffd700"
+              author:
+                name: "${user.username}"
+                icon_url: "${user.avatarURL}"
+              footer:
+                text: "Suggestion #${guild_state.suggestion_count + 1}"
+              timestamp: true
+          components:
+            - type: row
+              components:
+                - type: button
+                  style: success
+                  emoji: "thumbsup"
+                  custom_id: "suggestion_upvote"
+                - type: button
+                  style: danger
+                  emoji: "thumbsdown"
+                  custom_id: "suggestion_downvote"
+      - increment:
+          scope: guild
+          key: "suggestion_count"
+      - reply:
+          content: "Your suggestion has been submitted!"
+          ephemeral: true
+
+  # Announce command (admin)
+  - name: announce
+    description: Make an announcement
+    default_member_permissions: administrator
+    options:
+      - name: channel
+        description: Channel to announce in
+        type: channel
+        required: true
+      - name: message
+        description: The announcement
+        type: string
+        required: true
+      - name: ping
+        description: Role to ping
+        type: role
+        required: false
+    actions:
+      - send_message:
+          channel: "${options.channel.id}"
+          content: "${options.ping ? '<@&' + options.ping.id + '>' : ''}"
+          embeds:
+            - title: "Announcement"
+              description: "${options.message}"
+              color: "#ff6b6b"
+              footer:
+                text: "Announced by ${user.username}"
+              timestamp: true
+      - reply:
+          content: "Announcement sent!"
+          ephemeral: true
+
+  # Giveaway command
+  - name: giveaway
+    description: Start a giveaway
+    default_member_permissions: manage_guild
+    options:
+      - name: prize
+        description: What are you giving away?
+        type: string
+        required: true
+      - name: duration
+        description: How long (e.g., 1h, 1d, 1w)
+        type: string
+        required: true
+      - name: winners
+        description: Number of winners
+        type: integer
+        required: false
+        min_value: 1
+        max_value: 10
+    actions:
+      - send_message:
+          channel: "${channel.id}"
+          embeds:
+            - title: "Giveaway!"
+              description: |
+                **Prize:** ${options.prize}
+                **Winners:** ${options.winners ?? 1}
+                **Ends:** ${timestamp(dateAdd(now(), int(options.duration), 'hours'), 'relative')}
+
+                React with 🎉 to enter!
+              color: "#ff69b4"
+              footer:
+                text: "Hosted by ${user.username}"
+              timestamp: true
+          store_as: giveaway_message
+      - add_reaction:
+          channel: "${channel.id}"
+          message: "${giveaway_message.id}"
+          emoji: "tada"
+      - create_timer:
+          id: "giveaway_${giveaway_message.id}"
+          duration: "${options.duration}"
+          event: "giveaway_end"
+          data:
+            message_id: "${giveaway_message.id}"
+            channel_id: "${channel.id}"
+            prize: "${options.prize}"
+            winners: "${options.winners ?? 1}"
+      - reply:
+          content: "Giveaway started!"
+          ephemeral: true
+
+# ============================================
+# EVENTS
+# ============================================
+
+events:
+  ready:
+    actions:
+      - log:
+          level: info
+          message: "CommunityBot ready! Serving ${bot.guilds|length} guilds"
+
+  # Handle giveaway ending
+  giveaway_end:
+    actions:
+      - log:
+          level: info
+          message: "Giveaway ended for ${data.prize}"
+      # In production, would fetch reactions and pick winner
+
+  # Suggestion votes
+  button_click:
+    - name: "suggestion_vote"
+      condition: "startsWith(custom_id, 'suggestion_')"
+      actions:
+        - reply:
+            content: "Vote recorded!"
+            ephemeral: true
+
+# ============================================
+# SCHEDULER
+# ============================================
+
+scheduler:
+  jobs:
+    # Daily stats report
+    - name: "daily_stats"
+      cron: "0 9 * * *"
+      actions:
+        - send_message:
+            channel: "${env.STATS_CHANNEL}"
+            embeds:
+              - title: "Daily Stats"
+                description: |
+                  **Members:** ${guild.memberCount}
+                  **Messages today:** ${guild_state.messages_today ?? 0}
+                  **Commands used:** ${guild_state.commands_today ?? 0}
+                color: "#00ff00"
+                timestamp: true
+        - set:
+            scope: guild
+            key: "messages_today"
+            value: 0
+        - set:
+            scope: guild
+            key: "commands_today"
+            value: 0
+
+    # Weekly leaderboard
+    - name: "weekly_leaderboard"
+      cron: "0 12 * * 0"
+      actions:
+        - send_message:
+            channel: "${env.LEVELUP_CHANNEL}"
+            content: "@everyone Weekly XP Leaderboard:"
+            embeds:
+              - title: "Top 10 This Week"
+                description: "Check /leaderboard for full rankings!"
+                color: "#ffd700"

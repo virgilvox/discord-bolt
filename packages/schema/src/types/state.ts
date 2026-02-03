@@ -2,7 +2,7 @@
  * State and Storage types
  */
 
-import type { StateScope, Duration, Expression } from './common.js';
+import type { StateScope, Duration } from './common.js';
 
 /** Variable definition */
 export interface VariableDefinition {

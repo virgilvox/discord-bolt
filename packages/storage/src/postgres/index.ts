@@ -3,7 +3,7 @@
  */
 
 import { Pool, type PoolConfig } from 'pg';
-import type { StorageAdapter, StoredValue, QueryOptions, TableDefinition } from '../types.js';
+import type { StorageAdapter, StoredValue, QueryOptions, TableDefinition, TableColumn } from '../types.js';
 
 export interface PostgresOptions extends PoolConfig {
   url?: string;
@@ -144,7 +144,8 @@ export class PostgresAdapter implements StorageAdapter {
     const columns: string[] = [];
     const indexes: string[] = [];
 
-    for (const [colName, col] of Object.entries(definition.columns)) {
+    for (const [colName, columnDef] of Object.entries(definition.columns)) {
+      const col = columnDef as TableColumn;
       let sqlType: string;
       switch (col.type) {
         case 'string':
@@ -166,25 +167,25 @@ export class PostgresAdapter implements StorageAdapter {
           sqlType = 'TEXT';
       }
 
-      let colDef = `${colName} ${sqlType}`;
+      let colStr = `${colName} ${sqlType}`;
 
       if (col.primary) {
-        colDef += ' PRIMARY KEY';
+        colStr += ' PRIMARY KEY';
       }
 
       if (!col.nullable) {
-        colDef += ' NOT NULL';
+        colStr += ' NOT NULL';
       }
 
       if (col.unique) {
-        colDef += ' UNIQUE';
+        colStr += ' UNIQUE';
       }
 
       if (col.default !== undefined) {
-        colDef += ` DEFAULT '${JSON.stringify(col.default)}'`;
+        colStr += ` DEFAULT '${JSON.stringify(col.default)}'`;
       }
 
-      columns.push(colDef);
+      columns.push(colStr);
 
       if (col.index && !col.primary && !col.unique) {
         indexes.push(`CREATE INDEX IF NOT EXISTS idx_${name}_${colName} ON ${name}(${colName})`);

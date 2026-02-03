@@ -7,19 +7,19 @@ import type { ErrorCode } from './codes.js';
 export interface FurlowErrorOptions {
   code: ErrorCode;
   message: string;
-  cause?: Error;
+  cause?: Error | undefined;
   context?: Record<string, unknown>;
-  line?: number;
-  column?: number;
-  file?: string;
+  line?: number | undefined;
+  column?: number | undefined;
+  file?: string | undefined;
 }
 
 export class FurlowError extends Error {
   public readonly code: ErrorCode;
   public readonly context: Record<string, unknown>;
-  public readonly line?: number;
-  public readonly column?: number;
-  public readonly file?: string;
+  public readonly line?: number | undefined;
+  public readonly column?: number | undefined;
+  public readonly file?: string | undefined;
 
   constructor(options: FurlowErrorOptions) {
     super(options.message);

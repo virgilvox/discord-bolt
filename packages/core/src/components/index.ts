@@ -3,11 +3,9 @@
  */
 
 import type {
-  ComponentDefinition,
   ButtonComponent,
   SelectMenuComponent,
   ModalDefinition,
-  ActionRowComponent,
 } from '@furlow/schema';
 import type { ExpressionEvaluator } from '../expression/evaluator.js';
 
@@ -137,17 +135,32 @@ export class ComponentManager {
     }
 
     if (config.options) {
-      select.options = await Promise.all(
-        config.options.map(async (opt) => ({
-          label: await evaluator.interpolate(opt.label, context),
-          value: await evaluator.interpolate(opt.value, context),
-          description: opt.description
-            ? await evaluator.interpolate(opt.description, context)
-            : undefined,
-          emoji: opt.emoji ? this.parseEmoji(await evaluator.interpolate(opt.emoji, context)) : undefined,
-          default: opt.default,
-        }))
-      );
+      // Handle options as either expression or array
+      const resolvedOptions = typeof config.options === 'string'
+        ? await evaluator.evaluate(config.options, context) as Array<{ label: string; value: string; description?: string; emoji?: string; default?: boolean }>
+        : config.options;
+
+      if (Array.isArray(resolvedOptions)) {
+        select.options = await Promise.all(
+          resolvedOptions.map(async (opt) => ({
+            label: typeof opt.label === 'string' && opt.label.includes('${')
+              ? await evaluator.interpolate(opt.label, context)
+              : opt.label,
+            value: typeof opt.value === 'string' && opt.value.includes('${')
+              ? await evaluator.interpolate(opt.value, context)
+              : opt.value,
+            description: opt.description
+              ? typeof opt.description === 'string' && opt.description.includes('${')
+                ? await evaluator.interpolate(opt.description, context)
+                : opt.description
+              : undefined,
+            emoji: opt.emoji ? this.parseEmoji(typeof opt.emoji === 'string' && opt.emoji.includes('${')
+              ? await evaluator.interpolate(opt.emoji, context)
+              : opt.emoji) : undefined,
+            default: opt.default,
+          }))
+        );
+      }
     }
 
     return select;

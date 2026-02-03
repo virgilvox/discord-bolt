@@ -1,0 +1,331 @@
+# Music Bot Example
+# A bot for playing music in voice channels
+
+version: "0.1"
+
+identity:
+  name: "MusicBot"
+
+presence:
+  status: online
+  activity:
+    type: listening
+    text: "/play"
+
+intents:
+  - guilds
+  - guild_voice_states
+  - guild_messages
+
+state:
+  storage:
+    type: sqlite
+    path: ./data/music.db
+
+  variables:
+    default_volume:
+      type: number
+      scope: guild
+      default: 80
+
+# Enable music builtin
+builtins:
+  music:
+    enabled: true
+
+    # DJ role (optional - users with this role bypass restrictions)
+    dj_role: "${env.DJ_ROLE}"
+
+    # Queue settings
+    max_queue_size: 100
+    max_song_duration: 3600              # 1 hour max
+
+    # Playback settings
+    default_volume: 80
+    leave_on_empty: true
+    leave_timeout: 300                   # 5 minutes
+
+    # Sources
+    sources:
+      youtube: true
+      soundcloud: true
+      spotify: false                     # Requires Spotify API credentials
+
+    # Voting
+    vote_skip:
+      enabled: true
+      threshold: 0.5                     # 50% of voice members
+
+    # Filters
+    filters:
+      enabled: true
+      allowed:
+        - nightcore
+        - bass
+        - 8d
+        - vaporwave
+
+# Custom commands
+commands:
+  # Now playing with more detail
+  - name: nowplaying
+    description: Show detailed now playing info
+    actions:
+      - flow_if:
+          condition: "!guild_state.now_playing"
+          then:
+            - reply:
+                content: "Nothing is playing right now."
+                ephemeral: true
+          else:
+            - reply:
+                embeds:
+                  - title: "Now Playing"
+                    description: "[${guild_state.now_playing.title}](${guild_state.now_playing.url})"
+                    color: "#1DB954"
+                    thumbnail:
+                      url: "${guild_state.now_playing.thumbnail}"
+                    fields:
+                      - name: "Artist"
+                        value: "${guild_state.now_playing.artist}"
+                        inline: true
+                      - name: "Duration"
+                        value: "${duration(guild_state.now_playing.duration * 1000)}"
+                        inline: true
+                      - name: "Requested by"
+                        value: "<@${guild_state.now_playing.requestedBy}>"
+                        inline: true
+                      - name: "Progress"
+                        value: "${duration(guild_state.now_playing.position * 1000)} / ${duration(guild_state.now_playing.duration * 1000)}"
+                    footer:
+                      text: "Volume: ${guild_state.volume}%"
+
+  # Favorite songs
+  - name: favorite
+    description: Manage your favorite songs
+    options:
+      - name: action
+        description: Add, remove, or list favorites
+        type: string
+        required: true
+        choices:
+          - name: "Add current song"
+            value: "add"
+          - name: "List favorites"
+            value: "list"
+          - name: "Play favorites"
+            value: "play"
+    actions:
+      - flow_switch:
+          value: "${options.action}"
+          cases:
+            add:
+              - flow_if:
+                  condition: "!guild_state.now_playing"
+                  then:
+                    - reply:
+                        content: "Nothing is playing to favorite!"
+                        ephemeral: true
+                  else:
+                    - list_push:
+                        scope: user
+                        key: "favorites"
+                        value:
+                          title: "${guild_state.now_playing.title}"
+                          url: "${guild_state.now_playing.url}"
+                          artist: "${guild_state.now_playing.artist}"
+                    - reply:
+                        content: "Added **${guild_state.now_playing.title}** to your favorites!"
+                        ephemeral: true
+            list:
+              - flow_if:
+                  condition: "!user_state.favorites || length(user_state.favorites) == 0"
+                  then:
+                    - reply:
+                        content: "You don't have any favorites yet. Use `/favorite add` while a song is playing!"
+                        ephemeral: true
+                  else:
+                    - reply:
+                        embeds:
+                          - title: "Your Favorites"
+                            description: "${user_state.favorites|slice(0, 10)|map('title')|join('\n')}"
+                            color: "#ff69b4"
+                            footer:
+                              text: "Total: ${length(user_state.favorites)} songs"
+                        ephemeral: true
+            play:
+              - flow_if:
+                  condition: "!user_state.favorites || length(user_state.favorites) == 0"
+                  then:
+                    - reply:
+                        content: "You don't have any favorites!"
+                        ephemeral: true
+                  else:
+                    - voice_join:
+                        channel: "${member.voice?.channelId}"
+                    - batch:
+                        items: "${user_state.favorites}"
+                        as: "song"
+                        each:
+                          - queue_add:
+                              source: "${song.url}"
+                    - reply:
+                        content: "Added ${length(user_state.favorites)} favorites to the queue!"
+
+  # Create a playlist
+  - name: playlist
+    description: Save the current queue as a playlist
+    options:
+      - name: action
+        description: Save, load, or list playlists
+        type: string
+        required: true
+        choices:
+          - name: "Save current queue"
+            value: "save"
+          - name: "Load playlist"
+            value: "load"
+          - name: "List playlists"
+            value: "list"
+          - name: "Delete playlist"
+            value: "delete"
+      - name: name
+        description: Playlist name
+        type: string
+        required: false
+    actions:
+      - flow_switch:
+          value: "${options.action}"
+          cases:
+            save:
+              - flow_if:
+                  condition: "!options.name"
+                  then:
+                    - reply:
+                        content: "Please provide a playlist name!"
+                        ephemeral: true
+                  else:
+                    - set_map:
+                        scope: guild
+                        key: "playlists"
+                        field: "${options.name}"
+                        value: "${guild_state.queue}"
+                    - reply:
+                        content: "Saved queue as playlist **${options.name}**!"
+            load:
+              - flow_if:
+                  condition: "!options.name || !guild_state.playlists?.[options.name]"
+                  then:
+                    - reply:
+                        content: "Playlist not found!"
+                        ephemeral: true
+                  else:
+                    - batch:
+                        items: "${guild_state.playlists[options.name]}"
+                        as: "song"
+                        each:
+                          - queue_add:
+                              source: "${song.url}"
+                    - reply:
+                        content: "Loaded playlist **${options.name}**!"
+            list:
+              - reply:
+                  content: "**Playlists:** ${keys(guild_state.playlists ?? {})|join(', ') || 'None'}"
+                  ephemeral: true
+            delete:
+              - delete_map:
+                  scope: guild
+                  key: "playlists"
+                  field: "${options.name}"
+              - reply:
+                  content: "Deleted playlist **${options.name}**"
+                  ephemeral: true
+
+  # Lyrics command (placeholder - would need external API)
+  - name: lyrics
+    description: Get lyrics for the current song
+    actions:
+      - flow_if:
+          condition: "!guild_state.now_playing"
+          then:
+            - reply:
+                content: "Nothing is playing!"
+                ephemeral: true
+          else:
+            - reply:
+                content: "Searching for lyrics for **${guild_state.now_playing.title}**..."
+                ephemeral: true
+            # In production, you would call a lyrics API here
+            # - pipe_request:
+            #     pipe: "lyrics_api"
+            #     path: "/search"
+            #     query:
+            #       q: "${guild_state.now_playing.title} ${guild_state.now_playing.artist}"
+
+# Event handlers
+events:
+  # Announce when a song starts
+  voice_track_start:
+    actions:
+      - flow_if:
+          condition: "guild_state.announce_songs"
+          then:
+            - send_message:
+                channel: "${guild_state.music_channel}"
+                embeds:
+                  - title: "Now Playing"
+                    description: "[${track.title}](${track.url})"
+                    color: "#1DB954"
+                    thumbnail:
+                      url: "${track.thumbnail}"
+                    footer:
+                      text: "Requested by ${track.requestedBy}"
+
+  # Cleanup when queue ends
+  voice_queue_end:
+    actions:
+      - set:
+          scope: guild
+          key: "now_playing"
+          value: null
+      - flow_if:
+          condition: "guild_state.announce_songs"
+          then:
+            - send_message:
+                channel: "${guild_state.music_channel}"
+                content: "Queue ended. Use `/play` to add more songs!"
+
+  # Leave voice when everyone leaves
+  voice_state_update:
+    condition: "state.channelId && !state.channelId && old_state.channelId == bot.voice?.channelId"
+    actions:
+      - flow_if:
+          condition: "length(bot.voice?.channel?.members) <= 1"
+          then:
+            - wait:
+                duration: "30s"
+            - flow_if:
+                condition: "length(bot.voice?.channel?.members) <= 1"
+                then:
+                  - voice_leave:
+                      guild: "${guild.id}"
+
+# Flows
+flows:
+  check_same_voice:
+    description: Check if user is in the same voice channel as the bot
+    actions:
+      - flow_if:
+          condition: "!member.voice?.channelId"
+          then:
+            - reply:
+                content: "You need to be in a voice channel!"
+                ephemeral: true
+            - abort: {}
+      - flow_if:
+          condition: "bot.voice?.channelId && member.voice.channelId != bot.voice.channelId"
+          then:
+            - reply:
+                content: "You need to be in the same voice channel as me!"
+                ephemeral: true
+            - abort: {}

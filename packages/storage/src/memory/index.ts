@@ -139,8 +139,11 @@ export class MemoryAdapter implements StorageAdapter {
       const [field, dir] = options.orderBy.split(' ');
       const descending = dir?.toLowerCase() === 'desc';
       results.sort((a, b) => {
-        const aVal = a[field!];
-        const bVal = b[field!];
+        const aVal = a[field!] as string | number | boolean | null | undefined;
+        const bVal = b[field!] as string | number | boolean | null | undefined;
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return descending ? -1 : 1;
+        if (bVal == null) return descending ? 1 : -1;
         if (aVal < bVal) return descending ? 1 : -1;
         if (aVal > bVal) return descending ? -1 : 1;
         return 0;

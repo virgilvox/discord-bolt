@@ -2,8 +2,6 @@
  * Localization types
  */
 
-import type { Expression } from './common.js';
-
 /** Supported Discord locales */
 export type DiscordLocale =
   | 'en-US'

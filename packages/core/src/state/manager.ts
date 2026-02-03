@@ -128,7 +128,7 @@ export class StateManager {
 
     // Calculate TTL if defined
     if (def?.ttl) {
-      const ttlMs = parseDuration(def.ttl);
+      const ttlMs = typeof def.ttl === 'number' ? def.ttl : parseDuration(def.ttl);
       stored.expiresAt = now + ttlMs;
     }
 

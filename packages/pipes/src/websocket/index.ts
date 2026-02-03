@@ -3,8 +3,7 @@
  */
 
 import WebSocket from 'ws';
-import type { WebSocketPipeConfig } from '@furlow/schema';
-import type { Pipe, PipeResponse } from '../types.js';
+import type { Pipe, PipeResponse, WebSocketPipeConfig } from '../types.js';
 
 export interface WebSocketPipeOptions {
   name: string;

@@ -2,7 +2,7 @@
  * Action types
  */
 
-import type { Expression, Duration, Snowflake, Color, SimpleCondition } from './common.js';
+import type { Expression, ExpressionValue, Duration, Snowflake, Color, SimpleCondition } from './common.js';
 import type { EmbedDefinition } from './embeds.js';
 import type { ComponentDefinition } from './components.js';
 
@@ -18,19 +18,28 @@ export interface SendMessageAction extends BaseAction {
   action: 'send_message';
   channel?: Expression;
   content?: Expression;
-  embed?: EmbedDefinition;
+  embed?: EmbedDefinition | Expression;
   embeds?: EmbedDefinition[];
-  components?: ComponentDefinition[];
+  components?: ComponentDefinition[] | Expression;
   reply?: boolean;
   ephemeral?: boolean;
   tts?: boolean;
-  files?: Expression[];
+  files?: (Expression | FileAttachment)[];
   allowed_mentions?: {
     parse?: ('users' | 'roles' | 'everyone')[];
     users?: Snowflake[];
     roles?: Snowflake[];
     replied_user?: boolean;
   };
+  /** Store result in variable */
+  as?: string;
+}
+
+/** File attachment */
+export interface FileAttachment {
+  attachment: Expression;
+  name?: string;
+  description?: string;
 }
 
 /** Reply action */
@@ -41,6 +50,8 @@ export interface ReplyAction extends BaseAction {
   embeds?: EmbedDefinition[];
   components?: ComponentDefinition[];
   ephemeral?: boolean;
+  /** File attachments */
+  files?: (Expression | FileAttachment)[];
 }
 
 /** Defer action */
@@ -52,16 +63,26 @@ export interface DeferAction extends BaseAction {
 /** Edit message action */
 export interface EditMessageAction extends BaseAction {
   action: 'edit_message';
+  /** Channel ID */
+  channel?: Expression;
+  /** Message ID - alias for 'message_id' */
+  message?: Expression;
+  /** Message ID - alias for 'message' */
   message_id?: Expression;
   content?: Expression;
-  embed?: EmbedDefinition;
+  embed?: EmbedDefinition | Expression;
   embeds?: EmbedDefinition[];
-  components?: ComponentDefinition[];
+  components?: ComponentDefinition[] | Expression;
 }
 
 /** Delete message action */
 export interface DeleteMessageAction extends BaseAction {
   action: 'delete_message';
+  /** Channel ID */
+  channel?: Expression;
+  /** Message ID - alias for 'message_id' */
+  message?: Expression;
+  /** Message ID - alias for 'message' */
   message_id?: Expression;
   delay?: Duration;
 }
@@ -77,6 +98,11 @@ export interface BulkDeleteAction extends BaseAction {
 /** Add reaction action */
 export interface AddReactionAction extends BaseAction {
   action: 'add_reaction';
+  /** Channel ID */
+  channel?: Expression;
+  /** Message ID - alias for 'message_id' */
+  message?: Expression;
+  /** Message ID - alias for 'message' */
   message_id?: Expression;
   emoji: Expression;
 }
@@ -183,7 +209,7 @@ export interface SendDMAction extends BaseAction {
   action: 'send_dm';
   user: Expression;
   content?: Expression;
-  embed?: EmbedDefinition;
+  embed?: EmbedDefinition | Expression;
   embeds?: EmbedDefinition[];
 }
 
@@ -217,6 +243,14 @@ export interface ServerDeafenAction extends BaseAction {
   reason?: Expression;
 }
 
+/** Permission overwrite definition */
+export interface PermissionOverwrite {
+  id: Expression;
+  type?: 'role' | 'member';
+  allow?: string[] | Expression;
+  deny?: string[] | Expression;
+}
+
 /** Create channel action */
 export interface CreateChannelAction extends BaseAction {
   action: 'create_channel';
@@ -229,7 +263,8 @@ export interface CreateChannelAction extends BaseAction {
   bitrate?: number;
   user_limit?: number;
   position?: number;
-  permission_overwrites?: Record<string, Record<string, boolean>>;
+  permission_overwrites?: (PermissionOverwrite | Expression)[] | Record<string, Record<string, boolean>>;
+  as?: string;
 }
 
 /** Edit channel action */
@@ -270,6 +305,16 @@ export interface ArchiveThreadAction extends BaseAction {
   locked?: boolean;
 }
 
+/** Set channel permissions action */
+export interface SetChannelPermissionsAction extends BaseAction {
+  action: 'set_channel_permissions';
+  channel: Expression;
+  user?: Expression;
+  role?: Expression;
+  allow?: string[] | Expression;
+  deny?: string[] | Expression;
+}
+
 /** Create role action */
 export interface CreateRoleAction extends BaseAction {
   action: 'create_role';
@@ -303,9 +348,14 @@ export interface DeleteRoleAction extends BaseAction {
 /** Set state action */
 export interface SetAction extends BaseAction {
   action: 'set';
-  var: string;
-  value: Expression;
+  /** Variable name - alias for 'var' */
+  key?: string;
+  /** Variable name - alias for 'key' */
+  var?: string;
+  value: ExpressionValue;
   scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
+  /** Store result in variable */
+  as?: string;
 }
 
 /** Increment action */
@@ -324,36 +374,81 @@ export interface DecrementAction extends BaseAction {
   scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
 }
 
+/** List push action */
+export interface ListPushAction extends BaseAction {
+  action: 'list_push';
+  var?: string;
+  key?: string;
+  value: ExpressionValue;
+  scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
+}
+
+/** List remove action */
+export interface ListRemoveAction extends BaseAction {
+  action: 'list_remove';
+  var?: string;
+  key?: string;
+  value?: ExpressionValue;
+  index?: number | Expression;
+  scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
+}
+
+/** Set map action */
+export interface SetMapAction extends BaseAction {
+  action: 'set_map';
+  var?: string;
+  key?: string;
+  map_key: Expression;
+  value: ExpressionValue;
+  scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
+}
+
+/** Delete map action */
+export interface DeleteMapAction extends BaseAction {
+  action: 'delete_map';
+  var?: string;
+  key?: string;
+  map_key: Expression;
+  scope?: 'global' | 'guild' | 'channel' | 'user' | 'member';
+}
+
 /** Database insert action */
 export interface DbInsertAction extends BaseAction {
   action: 'db_insert';
   table: string;
-  data: Record<string, Expression>;
+  data: Record<string, ExpressionValue>;
+  /** Store result in variable */
+  as?: string;
 }
 
 /** Database update action */
 export interface DbUpdateAction extends BaseAction {
   action: 'db_update';
   table: string;
-  where: Record<string, Expression>;
-  data: Record<string, Expression>;
+  where: Record<string, ExpressionValue>;
+  data: Record<string, ExpressionValue> | Expression;
+  /** Upsert mode - insert if not exists */
+  upsert?: boolean;
+  /** Store result in variable */
+  as?: string;
 }
 
 /** Database delete action */
 export interface DbDeleteAction extends BaseAction {
   action: 'db_delete';
   table: string;
-  where: Record<string, Expression>;
+  where: Record<string, ExpressionValue>;
 }
 
 /** Database query action */
 export interface DbQueryAction extends BaseAction {
   action: 'db_query';
   table: string;
-  where?: Record<string, Expression>;
+  where?: Record<string, ExpressionValue>;
   select?: string[];
   order_by?: string;
-  limit?: number;
+  limit?: number | Expression;
+  offset?: number | Expression;
   as: string;
 }
 
@@ -407,7 +502,7 @@ export interface ParallelAction extends BaseAction {
 export interface BatchAction extends BaseAction {
   action: 'batch';
   items: Expression;
-  each: Action[];
+  each: Action | Action[];
   as?: string;
   concurrency?: number;
 }
@@ -431,7 +526,10 @@ export interface FlowWhileAction extends BaseAction {
 /** If action */
 export interface FlowIfAction extends BaseAction {
   action: 'flow_if';
-  if: SimpleCondition;
+  /** Condition - alias for 'if' */
+  condition?: SimpleCondition;
+  /** Condition - alias for 'condition' */
+  if?: SimpleCondition;
   then: Action[];
   else?: Action[];
 }
@@ -518,21 +616,42 @@ export interface VoiceSeekAction extends BaseAction {
 /** Voice volume action */
 export interface VoiceVolumeAction extends BaseAction {
   action: 'voice_volume';
-  volume: number;
+  /** Volume level - alias for 'level' */
+  volume?: number | Expression;
+  /** Volume level - alias for 'volume' */
+  level?: number | Expression;
 }
 
 /** Voice set filter action */
 export interface VoiceSetFilterAction extends BaseAction {
   action: 'voice_set_filter';
-  filter: string;
+  filter: string | Expression;
   enabled?: boolean;
   options?: Record<string, unknown>;
+}
+
+/** Voice search action */
+export interface VoiceSearchAction extends BaseAction {
+  action: 'voice_search';
+  query: Expression;
+  as?: string;
+}
+
+/** Queue get action */
+export interface QueueGetAction extends BaseAction {
+  action: 'queue_get';
+  as?: string;
 }
 
 /** Queue add action */
 export interface QueueAddAction extends BaseAction {
   action: 'queue_add';
-  source: Expression;
+  /** Track source URL or search query */
+  source?: Expression;
+  /** Track object from voice_search */
+  track?: Expression;
+  /** User who requested the track */
+  requester?: Expression;
   position?: number | 'next' | 'last';
 }
 
@@ -555,7 +674,7 @@ export interface QueueShuffleAction extends BaseAction {
 /** Queue loop action */
 export interface QueueLoopAction extends BaseAction {
   action: 'queue_loop';
-  mode: 'off' | 'track' | 'queue';
+  mode: 'off' | 'track' | 'queue' | Expression;
 }
 
 /** Pipe request action */
@@ -618,6 +737,14 @@ export interface RecordMetricAction extends BaseAction {
   labels?: Record<string, Expression>;
 }
 
+/** Canvas render action */
+export interface CanvasRenderAction extends BaseAction {
+  action: 'canvas_render';
+  generator: Expression;
+  context?: Record<string, Expression>;
+  as?: string;
+}
+
 /** Union of all action types */
 export type Action =
   | SendMessageAction
@@ -649,12 +776,17 @@ export type Action =
   | DeleteChannelAction
   | CreateThreadAction
   | ArchiveThreadAction
+  | SetChannelPermissionsAction
   | CreateRoleAction
   | EditRoleAction
   | DeleteRoleAction
   | SetAction
   | IncrementAction
   | DecrementAction
+  | ListPushAction
+  | ListRemoveAction
+  | SetMapAction
+  | DeleteMapAction
   | DbInsertAction
   | DbUpdateAction
   | DbDeleteAction
@@ -695,4 +827,7 @@ export type Action =
   | CreateTimerAction
   | CancelTimerAction
   | CounterIncrementAction
-  | RecordMetricAction;
+  | RecordMetricAction
+  | CanvasRenderAction
+  | VoiceSearchAction
+  | QueueGetAction;

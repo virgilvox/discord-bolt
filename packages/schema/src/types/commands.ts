@@ -2,7 +2,7 @@
  * Command types
  */
 
-import type { Expression, Snowflake, SimpleCondition } from './common.js';
+import type { Expression, Snowflake } from './common.js';
 import type { Action } from './actions.js';
 import type { AccessRule } from './permissions.js';
 

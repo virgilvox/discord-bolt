@@ -228,9 +228,63 @@ state:
           type: timestamp
 ```
 
+## Using Builtins
+
+FURLOW includes pre-built modules for common bot features:
+
+```yaml
+builtins:
+  moderation:
+    enabled: true
+    log_channel: "mod-logs-channel-id"
+
+  welcome:
+    enabled: true
+    channel: "welcome-channel-id"
+    message: "Welcome to ${guild.name}, ${user.mention}!"
+
+  leveling:
+    enabled: true
+    xp_per_message: 15
+    cooldown: 60
+```
+
+Available builtins:
+- **moderation** - Warnings, kicks, bans, mutes, case system
+- **welcome** - Welcome/leave messages, auto-roles
+- **leveling** - XP system with levels and rewards
+- **logging** - Audit logging to channels
+- **tickets** - Support ticket system
+- **reaction-roles** - Role assignment via reactions/buttons
+- **music** - Voice channel music playback
+- **starboard** - Highlight popular messages
+- **polls** - Voting and polls
+- **giveaways** - Timed giveaways
+- **auto-responder** - Automatic message responses
+- **afk** - AFK status tracking
+- **reminders** - User reminders
+- **utilities** - Server info, user info, etc.
+
+See the [Builtins Documentation](./builtins/) for detailed configuration options.
+
+## Validation
+
+Validate your configuration before deploying:
+
+```bash
+furlow validate
+```
+
+This checks for:
+- YAML syntax errors
+- Schema validation
+- Missing required fields
+- Invalid references
+
 ## Next Steps
 
-- Read the [Specification Reference](./specification.md)
-- Browse [Example Bots](../examples/)
+- Read the [CLI Reference](./cli-reference.md) for all commands
 - Learn the [Expression Language](./expression-language.md)
-- Explore [Available Actions](./actions-reference.md)
+- Browse the [Actions Reference](./actions-reference.md)
+- Check out the [Events Reference](./events-reference.md)
+- Explore the [Builtins](./builtins/) documentation

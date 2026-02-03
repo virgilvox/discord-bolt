@@ -27,8 +27,10 @@ export class GatewayManager {
 
     const reconnect = this.config.reconnect ?? {};
     this.maxReconnectAttempts = reconnect.max_retries ?? 10;
-    this.baseDelay = this.parseDuration(reconnect.base_delay ?? '1s');
-    this.maxDelay = this.parseDuration(reconnect.max_delay ?? '60s');
+    const baseDelay = reconnect.base_delay ?? '1s';
+    const maxDelay = reconnect.max_delay ?? '60s';
+    this.baseDelay = typeof baseDelay === 'number' ? baseDelay : this.parseDuration(baseDelay);
+    this.maxDelay = typeof maxDelay === 'number' ? maxDelay : this.parseDuration(maxDelay);
     this.backoffStrategy = reconnect.backoff ?? 'exponential';
 
     this.setupListeners(options);

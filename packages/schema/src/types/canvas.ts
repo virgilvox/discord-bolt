@@ -27,7 +27,10 @@ export interface ImageLayer extends BaseCanvasLayer {
 /** Circle image layer (for avatars) */
 export interface CircleImageLayer extends BaseCanvasLayer {
   type: 'circle_image';
-  src: Expression;
+  /** Image source URL - alias for 'src' */
+  url?: Expression;
+  /** Image source URL - alias for 'url' */
+  src?: Expression;
   radius: number | Expression;
   border?: {
     width?: number;
@@ -69,9 +72,15 @@ export interface ProgressBarLayer extends BaseCanvasLayer {
   type: 'progress_bar';
   width: number | Expression;
   height: number | Expression;
-  value: number | Expression;
+  /** Progress value (0-1) - alias for 'value' */
+  progress?: number | Expression;
+  /** Progress value - alias for 'progress' */
+  value?: number | Expression;
   max?: number | Expression;
   background?: Color;
+  /** Fill color - alias for 'fill' */
+  color?: Color | Expression;
+  /** Fill color - alias for 'color' */
   fill?: Color | Expression;
   radius?: number;
   direction?: 'horizontal' | 'vertical';
@@ -104,7 +113,7 @@ export type CanvasLayer =
 
 /** Canvas generator definition */
 export interface CanvasGenerator {
-  name: string;
+  name?: string;
   width: number;
   height: number;
   background?: Color | Expression;

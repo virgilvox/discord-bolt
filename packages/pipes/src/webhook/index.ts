@@ -3,8 +3,7 @@
  */
 
 import { createHmac } from 'node:crypto';
-import type { WebhookPipeConfig } from '@furlow/schema';
-import type { Pipe, PipeResponse } from '../types.js';
+import type { Pipe, PipeResponse, WebhookPipeConfig } from '../types.js';
 
 export interface WebhookPipeOptions {
   name: string;

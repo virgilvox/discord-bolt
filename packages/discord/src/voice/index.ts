@@ -13,9 +13,38 @@ import {
   type VoiceConnection,
   type AudioPlayer,
   type AudioResource,
+  type DiscordGatewayAdapterCreator,
 } from '@discordjs/voice';
 import type { VoiceChannel, StageChannel, Guild } from 'discord.js';
-import type { VoiceConfig, AudioFilter, QueueLoopMode } from '@furlow/schema';
+
+/** Voice configuration */
+export interface VoiceConfig {
+  connection?: {
+    self_deaf?: boolean;
+    self_mute?: boolean;
+    timeout?: string;
+  };
+  default_volume?: number;
+  default_loop?: QueueLoopMode;
+  max_queue_size?: number;
+  filters?: string[];
+}
+
+/** Audio filter types */
+export type AudioFilter =
+  | 'bassboost'
+  | 'nightcore'
+  | 'vaporwave'
+  | '8d'
+  | 'treble'
+  | 'normalizer'
+  | 'karaoke'
+  | 'tremolo'
+  | 'vibrato'
+  | 'reverse';
+
+/** Queue loop mode */
+export type QueueLoopMode = 'off' | 'track' | 'queue';
 
 export interface QueueItem {
   url: string;
@@ -65,7 +94,7 @@ export class VoiceManager {
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: guildId,
-      adapterCreator: channel.guild.voiceAdapterCreator,
+      adapterCreator: channel.guild.voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
       selfDeaf: options.selfDeaf ?? this.config.connection?.self_deaf ?? true,
       selfMute: options.selfMute ?? this.config.connection?.self_mute ?? false,
     });

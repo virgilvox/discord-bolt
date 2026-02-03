@@ -3,8 +3,7 @@
  */
 
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import type { HttpPipeConfig } from '@furlow/schema';
-import type { Pipe, PipeResponse } from '../types.js';
+import type { HttpPipeConfig, Pipe, PipeResponse } from '../types.js';
 
 export interface HttpPipeOptions {
   name: string;

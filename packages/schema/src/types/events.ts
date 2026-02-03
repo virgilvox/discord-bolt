@@ -2,7 +2,7 @@
  * Event types
  */
 
-import type { SimpleCondition, Expression } from './common.js';
+import type { SimpleCondition } from './common.js';
 import type { Action } from './actions.js';
 
 /** Discord gateway events */
@@ -114,6 +114,9 @@ export type FurlowEvent =
 /** Event handler definition */
 export interface EventHandler {
   event: DiscordEvent | FurlowEvent | string;
+  /** Condition expression - alias for 'when' */
+  condition?: SimpleCondition;
+  /** Condition expression - alias for 'condition' */
   when?: SimpleCondition;
   actions: Action[];
   debounce?: string;

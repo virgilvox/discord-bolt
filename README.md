@@ -1,4 +1,4 @@
-# BOLT — Bot Orchestration Layout & Toolkit
+# FURLOW — Bot Orchestration Layout & Toolkit
 
 ### Specification v0.1.0-draft
 
@@ -37,31 +37,31 @@
 
 ## 1. Philosophy
 
-BOLT defines a bot as a structured document — a single source of truth that any compliant runtime can execute. The spec has three core principles:
+FURLOW defines a bot as a structured document — a single source of truth that any compliant runtime can execute. The spec has three core principles:
 
 - **Declarative over imperative.** You describe *what* the bot does, not *how*. The runtime handles the wiring.
-- **Composable from universal primitives.** Every bot behavior maps to a finite set of Discord API capabilities. BOLT names them all and lets you combine them freely.
-- **Config is the program.** The YAML file (or set of files) IS the bot. No code files, no build step. If you need escape hatches for custom logic, BOLT provides sandboxed expression evaluation and external pipe connections — not inline code blocks.
+- **Composable from universal primitives.** Every bot behavior maps to a finite set of Discord API capabilities. FURLOW names them all and lets you combine them freely.
+- **Config is the program.** The YAML file (or set of files) IS the bot. No code files, no build step. If you need escape hatches for custom logic, FURLOW provides sandboxed expression evaluation and external pipe connections — not inline code blocks.
 
-A conformant BOLT runtime reads the spec, registers with the Discord gateway, and executes the declared behavior. The runtime is interchangeable. The spec is portable.
+A conformant FURLOW runtime reads the spec, registers with the Discord gateway, and executes the declared behavior. The runtime is interchangeable. The spec is portable.
 
 ---
 
 ## 2. File Structure
 
-A BOLT bot can be a single file or a directory.
+A FURLOW bot can be a single file or a directory.
 
 ### Single file
 
 ```
-my-bot.bolt.yaml
+my-bot.furlow.yaml
 ```
 
 ### Directory (recommended for complex bots)
 
 ```
 my-bot/
-├── bolt.yaml              # root config — identity, intents, permissions, state
+├── furlow.yaml              # root config — identity, intents, permissions, state
 ├── commands/              # one file per command or command group
 │   ├── moderation.yaml
 │   ├── fun.yaml
@@ -337,7 +337,7 @@ access:
 
 ## 6. State & Storage
 
-BOLT bots can store persistent and ephemeral state. The runtime provides the storage backend — the spec only defines the schema.
+FURLOW bots can store persistent and ephemeral state. The runtime provides the storage backend — the spec only defines the schema.
 
 ### 6.1 Variables
 
@@ -511,7 +511,7 @@ For relational-style data. The runtime maps this to SQLite, Postgres, or whateve
 
 ## 7. Expression Language
 
-BOLT uses a sandboxed expression language for dynamic values within YAML. Expressions are wrapped in `${}`.
+FURLOW uses a sandboxed expression language for dynamic values within YAML. Expressions are wrapped in `${}`.
 
 ### 7.1 Contexts
 
@@ -624,7 +624,7 @@ content: |
 
 ## 8. Actions
 
-Actions are the atomic operations a bot performs. They are the verbs of BOLT. Every event handler, command handler, and flow step consists of one or more actions.
+Actions are the atomic operations a bot performs. They are the verbs of FURLOW. Every event handler, command handler, and flow step consists of one or more actions.
 
 ### 8.1 Message Actions
 
@@ -1653,7 +1653,7 @@ events:
 
 ### 10.8 Full Event Reference
 
-Every Discord gateway event BOLT supports:
+Every Discord gateway event FURLOW supports:
 
 | Category | Events |
 |---|---|
@@ -1684,7 +1684,7 @@ Every Discord gateway event BOLT supports:
 
 ## 11. Flows & Logic
 
-Flows are reusable, named action sequences with arguments and conditional logic. They are the closest thing BOLT has to "functions."
+Flows are reusable, named action sequences with arguments and conditional logic. They are the closest thing FURLOW has to "functions."
 
 ### 11.1 Flow Definition
 
@@ -2615,7 +2615,7 @@ video:
 
 ## 16. Data Pipes & Integrations
 
-Pipes are bidirectional data connections to external systems. They are how BOLT bots talk to the outside world.
+Pipes are bidirectional data connections to external systems. They are how FURLOW bots talk to the outside world.
 
 ### 16.1 HTTP / REST Pipes
 
@@ -2761,7 +2761,7 @@ pipes:
   mqtt_broker:
     type: mqtt
     broker: "mqtt://192.168.1.50:1883"
-    client_id: "bolt-bot"
+    client_id: "furlow-bot"
     username: $env.MQTT_USER
     password: $env.MQTT_PASS
     
@@ -3460,7 +3460,7 @@ analytics:
 
 ## 22. Dashboard & Web UI
 
-BOLT runtimes can serve a web dashboard. The spec defines what the dashboard exposes and how to customize it.
+FURLOW runtimes can serve a web dashboard. The spec defines what the dashboard exposes and how to customize it.
 
 ### 22.1 Dashboard Configuration
 
@@ -4078,7 +4078,7 @@ builtins:
 A complete bot definition for a maker community server:
 
 ```yaml
-# bolt.yaml — HACKSPACE BOT
+# furlow.yaml — HACKSPACE BOT
 
 version: "1.0"
 
@@ -4323,5 +4323,5 @@ Channels can be referenced by:
 
 ---
 
-*BOLT v0.1.0-draft — Bot Orchestration Layout & Toolkit*
+*FURLOW v0.1.0-draft — Bot Orchestration Layout & Toolkit*
 *A spec by the makers, for the makers.*

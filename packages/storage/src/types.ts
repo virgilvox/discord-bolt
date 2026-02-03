@@ -2,8 +2,6 @@
  * Storage adapter types
  */
 
-import type { TableDefinition } from '@furlow/schema';
-
 export interface StoredValue {
   value: unknown;
   type: string;
@@ -66,4 +64,7 @@ export interface TableColumn {
   index?: boolean;
 }
 
-export type { TableDefinition };
+export interface TableDefinition {
+  columns: Record<string, TableColumn>;
+  indexes?: string[][];
+}

@@ -5,8 +5,6 @@
 import type {
   EmbedDefinition,
   ThemeConfig,
-  EmbedTemplate,
-  EmbedField,
   Color,
 } from '@furlow/schema';
 import type { ExpressionEvaluator } from '../expression/evaluator.js';
@@ -167,8 +165,13 @@ export class EmbedBuilder {
       return color;
     }
 
+    // If it's an RGB object, convert to number
+    if (typeof color === 'object' && color !== null && 'r' in color) {
+      return (color.r << 16) | (color.g << 8) | color.b;
+    }
+
     // Check if it's a theme color name
-    if (this.theme.colors && color in this.theme.colors) {
+    if (typeof color === 'string' && this.theme.colors && color in this.theme.colors) {
       const themeColor = this.theme.colors[color as keyof typeof this.theme.colors];
       if (typeof themeColor === 'number') {
         return themeColor;
@@ -177,12 +180,12 @@ export class EmbedBuilder {
     }
 
     // If it contains ${}, evaluate as expression
-    if (color.includes('${')) {
+    if (typeof color === 'string' && color.includes('${')) {
       color = await evaluator.interpolate(color, context);
     }
 
     // Parse hex color
-    if (color.startsWith('#')) {
+    if (typeof color === 'string' && color.startsWith('#')) {
       return parseInt(color.slice(1), 16);
     }
 
@@ -203,7 +206,11 @@ export class EmbedBuilder {
       blurple: 0x5865f2,
     };
 
-    return namedColors[color.toLowerCase()] ?? 0x000000;
+    if (typeof color === 'string') {
+      return namedColors[color.toLowerCase()] ?? 0x000000;
+    }
+
+    return 0x000000;
   }
 
   /**

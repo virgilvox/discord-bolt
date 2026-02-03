@@ -5,14 +5,28 @@
 /** Expression that can be evaluated at runtime */
 export type Expression = string;
 
-/** Duration string like "5m", "1h", "30s" */
-export type Duration = string;
+/** Expression or literal value */
+export type ExpressionOr<T> = Expression | T;
+
+/** Any value that can be an expression or literal */
+export type ExpressionValue = Expression | number | boolean | null | undefined | ExpressionValue[] | { [key: string]: ExpressionValue };
+
+/** Duration string like "5m", "1h", "30s" or number (milliseconds) */
+export type Duration = string | number;
 
 /** Snowflake ID (Discord IDs) */
 export type Snowflake = string;
 
-/** Color in hex format or named color */
-export type Color = string | number;
+/** RGB color object */
+export interface RGBColor {
+  r: number;
+  g: number;
+  b: number;
+  a?: number;
+}
+
+/** Color in hex format, named color, number, or RGB object */
+export type Color = string | number | RGBColor;
 
 /** URL string */
 export type Url = string;

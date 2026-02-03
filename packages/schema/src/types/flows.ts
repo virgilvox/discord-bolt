@@ -2,7 +2,7 @@
  * Flow types
  */
 
-import type { Expression, SimpleCondition } from './common.js';
+import type { Expression } from './common.js';
 import type { Action } from './actions.js';
 
 /** Flow parameter */

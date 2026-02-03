@@ -3,7 +3,7 @@
  */
 
 import type { EventHandler as EventHandlerDef } from '@furlow/schema';
-import type { EventName, RegisteredHandler, EventPayload } from './types.js';
+import type { EventName, RegisteredHandler } from './types.js';
 import type { ActionExecutor } from '../actions/executor.js';
 import type { ActionContext } from '../actions/types.js';
 import type { ExpressionEvaluator } from '../expression/evaluator.js';

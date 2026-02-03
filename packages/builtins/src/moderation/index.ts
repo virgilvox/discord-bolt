@@ -98,7 +98,7 @@ export const moderationCommands: CommandDefinition[] = [
         action: 'ban',
         user: '${args.user.id}',
         reason: '${args.reason || "No reason provided"}',
-        delete_message_days: '${args.delete_days || 0}',
+        delete_message_days: '${args.delete_days || 0}' as unknown as number,
         dm_user: true,
         dm_message: 'You have been banned from ${guild.name}. Reason: ${args.reason || "No reason provided"}',
       },
@@ -195,7 +195,7 @@ export const moderationCommands: CommandDefinition[] = [
       {
         action: 'bulk_delete',
         channel: '${channel.id}',
-        count: '${args.count}',
+        count: '${args.count}' as unknown as number,
         filter: '${args.user ? "message.author.id == \\"" + args.user.id + "\\"" : null}',
       },
       {

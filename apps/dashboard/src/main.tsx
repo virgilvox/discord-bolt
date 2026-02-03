@@ -1,104 +1,148 @@
+/**
+ * FURLOW Dashboard - Main Entry Point
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Pages
+import { GuildSelect } from './pages/GuildSelect';
+import { Overview } from './pages/Overview';
+import { Settings } from './pages/Settings';
+import { Moderation } from './pages/Moderation';
+import { Levels } from './pages/Levels';
+
+// Global styles
+const globalStyles = `
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #1a1a2e;
+    color: #fff;
+    line-height: 1.5;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1a2e;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #16213e;
+  }
+`;
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/guild/:id" element={<GuildDashboard />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <style>{globalStyles}</style>
+      <BrowserRouter>
+        <Routes>
+          {/* Home - Guild Selection */}
+          <Route path="/" element={<GuildSelect />} />
+
+          {/* Guild Routes */}
+          <Route path="/guild/:id" element={<Overview />} />
+          <Route path="/guild/:id/settings" element={<Settings />} />
+          <Route path="/guild/:id/moderation" element={<Moderation />} />
+          <Route path="/guild/:id/levels" element={<Levels />} />
+
+          {/* Placeholder routes for future pages */}
+          <Route path="/guild/:id/welcome" element={<ComingSoon title="Welcome Settings" />} />
+          <Route path="/guild/:id/logging" element={<ComingSoon title="Logging Settings" />} />
+          <Route path="/guild/:id/automod" element={<ComingSoon title="AutoMod Settings" />} />
+
+          {/* Login redirect */}
+          <Route path="/login" element={<Navigate to="/" replace />} />
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 
-function Home() {
-  const [user, setUser] = React.useState<any>(null);
-  const [guilds, setGuilds] = React.useState<any[]>([]);
-
-  React.useEffect(() => {
-    fetch('/api/user')
-      .then((res) => res.ok ? res.json() : null)
-      .then(setUser);
-
-    fetch('/api/guilds')
-      .then((res) => res.ok ? res.json() : [])
-      .then(setGuilds);
-  }, []);
-
-  if (!user) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h1>FURLOW Dashboard</h1>
-        <p>Please log in to manage your bot.</p>
-        <a href="/auth/discord" style={{
-          display: 'inline-block',
+function ComingSoon({ title }: { title: string }) {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#1a1a2e',
+      padding: '2rem',
+    }}>
+      <h1 style={{ color: '#fff', marginBottom: '1rem' }}>{title}</h1>
+      <p style={{ color: '#b9bbbe', marginBottom: '2rem' }}>
+        This feature is coming soon.
+      </p>
+      <a
+        href="/"
+        style={{
           padding: '0.75rem 1.5rem',
-          background: '#5865F2',
-          color: 'white',
+          background: '#e94560',
+          color: '#fff',
           textDecoration: 'none',
-          borderRadius: '4px',
-          marginTop: '1rem'
-        }}>
-          Login with Discord
-        </a>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding: '2rem' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>FURLOW Dashboard</h1>
-        <div>
-          <span>Welcome, {user.username}</span>
-          <a href="/auth/logout" style={{ marginLeft: '1rem' }}>Logout</a>
-        </div>
-      </header>
-
-      <h2>Your Servers</h2>
-      <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
-        {guilds.map((guild) => (
-          <a
-            key={guild.id}
-            href={`/guild/${guild.id}`}
-            style={{
-              padding: '1rem',
-              background: '#2f3136',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'white'
-            }}
-          >
-            <img
-              src={guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png` : '/default-server.png'}
-              alt=""
-              style={{ width: '48px', height: '48px', borderRadius: '50%' }}
-            />
-            <h3>{guild.name}</h3>
-          </a>
-        ))}
-      </div>
+          borderRadius: '8px',
+        }}
+      >
+        Back to Home
+      </a>
     </div>
   );
 }
 
-function GuildDashboard() {
+function NotFound() {
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Guild Dashboard</h1>
-      <p>Configure your bot settings here.</p>
-    </div>
-  );
-}
-
-function Login() {
-  return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>Login Required</h1>
-      <a href="/auth/discord">Login with Discord</a>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#1a1a2e',
+      padding: '2rem',
+    }}>
+      <h1 style={{ color: '#fff', fontSize: '4rem', marginBottom: '1rem' }}>404</h1>
+      <p style={{ color: '#b9bbbe', marginBottom: '2rem' }}>
+        Page not found.
+      </p>
+      <a
+        href="/"
+        style={{
+          padding: '0.75rem 1.5rem',
+          background: '#e94560',
+          color: '#fff',
+          textDecoration: 'none',
+          borderRadius: '8px',
+        }}
+      >
+        Back to Home
+      </a>
     </div>
   );
 }

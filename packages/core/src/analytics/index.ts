@@ -40,12 +40,15 @@ export class MetricsCollector {
 
     if (config.counters) {
       for (const [name, def] of Object.entries(config.counters)) {
-        this.counters.set(name, {
+        const counter: Counter = {
           name,
-          description: def.description,
           labels: def.labels ?? [],
           values: new Map(),
-        });
+        };
+        if (def.description) {
+          counter.description = def.description;
+        }
+        this.counters.set(name, counter);
       }
     }
   }
@@ -142,10 +145,8 @@ export class MetricsCollector {
       }
       lines.push(`# TYPE ${histogram.name} histogram`);
 
-      let cumulativeCount = 0;
       for (const bucket of histogram.buckets) {
         const count = histogram.values.filter((v) => v <= bucket).length;
-        cumulativeCount = count;
         lines.push(`${histogram.name}_bucket{le="${bucket}"} ${count}`);
       }
       lines.push(`${histogram.name}_bucket{le="+Inf"} ${histogram.count}`);

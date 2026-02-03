@@ -4,7 +4,6 @@
 
 import type { Expression, SimpleCondition } from './common.js';
 import type { Action } from './actions.js';
-import type { EmbedDefinition } from './embeds.js';
 
 /** Button style */
 export type ButtonStyle = 'primary' | 'secondary' | 'success' | 'danger' | 'link';
@@ -33,13 +32,13 @@ export interface SelectOption {
 
 /** Select menu component */
 export interface SelectMenuComponent {
-  type: 'select' | 'string_select' | 'user_select' | 'role_select' | 'channel_select' | 'mentionable_select';
-  custom_id: string;
+  type: 'select' | 'select_menu' | 'string_select' | 'user_select' | 'role_select' | 'channel_select' | 'mentionable_select';
+  custom_id: string | Expression;
   placeholder?: Expression;
   min_values?: number;
-  max_values?: number;
+  max_values?: number | Expression;
   disabled?: boolean;
-  options?: SelectOption[];
+  options?: SelectOption[] | Expression;
   channel_types?: ('text' | 'voice' | 'category' | 'announcement' | 'stage' | 'forum')[];
   actions?: Action[];
   when?: SimpleCondition;

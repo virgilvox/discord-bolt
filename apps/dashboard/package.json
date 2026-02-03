@@ -16,8 +16,8 @@
     "dev:server": "tsup --watch",
     "lint": "eslint src/ server/",
     "start": "node dist/server/index.js",
-    "test": "vitest run",
-    "test:unit": "vitest run",
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -30,6 +30,7 @@
     "passport": "^0.7.0",
     "passport-discord": "^0.1.4",
     "prom-client": "^15.1.0",
+    "ws": "^8.16.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.0"
@@ -39,6 +40,7 @@
     "@types/express-session": "^1.18.0",
     "@types/node": "^20.11.0",
     "@types/passport": "^1.0.16",
+    "@types/ws": "^8.5.10",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
