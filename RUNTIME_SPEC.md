@@ -1352,15 +1352,26 @@ Delete a message.
 ```
 
 #### `defer`
-Defer an interaction response.
+Defer an interaction response. Shows "Bot is thinking..." to the user.
+
+**CRITICAL**: Discord requires interaction responses within 3 seconds. Use `defer` as the first action for any command that may take longer.
 
 ```yaml
 - defer:
     ephemeral: false            # Whether reply will be ephemeral
 ```
 
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `ephemeral` | boolean | No | `false` | If true, only the invoking user sees the response |
+
+After deferring:
+- You have 15 minutes to send a response
+- Use `reply` (which automatically calls followUp when deferred)
+- Or use `update_message` for component interactions
+
 #### `update_message`
-Update a deferred interaction response.
+Update a component interaction's message (buttons, select menus).
 
 ```yaml
 - update_message:

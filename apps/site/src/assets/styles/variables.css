@@ -1,0 +1,165 @@
+/* ========================================
+   FURLOW DESIGN SYSTEM - CSS Variables
+   ======================================== */
+
+:root {
+  /* Background Scale */
+  --bg-void:       #060606;
+  --bg:            #0a0a0a;
+  --bg-raised:     #111111;
+  --bg-panel:      #151515;
+  --bg-card:       #1a1a1a;
+  --bg-code:       #0e0e0e;
+  --bg-sidebar:    #0c0c0c;
+  --bg-hover:      #1e1e1e;
+  --bg-active:     #222222;
+
+  /* Text Scale */
+  --text:          #b8b8b8;
+  --text-bright:   #e8e8e8;
+  --text-heading:  #f0f0f0;
+  --text-dim:      #666666;
+  --text-ghost:    #444444;
+  --text-disabled: #333333;
+
+  /* Primary Accent - Industrial Orange */
+  --accent:        #ff6b35;
+  --accent-bright: #ff8c5a;
+  --accent-dim:    #cc5529;
+  --accent-dark:   #993d1e;
+  --accent-glow:   rgba(255, 107, 53, 0.15);
+  --accent-faint:  rgba(255, 107, 53, 0.06);
+
+  /* Semantic Colors */
+  --green:         #8bd649;
+  --green-dim:     rgba(139, 214, 73, 0.15);
+  --yellow:        #f0c040;
+  --yellow-dim:    rgba(240, 192, 64, 0.15);
+  --blue:          #5ba8f5;
+  --blue-dim:      rgba(91, 168, 245, 0.15);
+  --purple:        #9a7bca;
+  --purple-dim:    rgba(154, 123, 202, 0.15);
+  --red:           #e05555;
+  --red-dim:       rgba(224, 85, 85, 0.15);
+  --cyan:          #4ec9b0;
+  --cyan-dim:      rgba(78, 201, 176, 0.15);
+
+  /* Borders */
+  --border:        #1e1e1e;
+  --border-mid:    #2a2a2a;
+  --border-bright: #444444;
+  --border-accent: var(--accent);
+  --border-dashed: 1px dashed var(--border-mid);
+  --border-solid:  1px solid var(--border);
+  --border-strong: 1px solid var(--border-bright);
+
+  /* Surfaces & Shadows */
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:     0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:     0 8px 32px rgba(0,0,0,0.6);
+  --shadow-glow:   0 0 20px var(--accent-glow);
+
+  /* Spacing Scale */
+  --sp-2xs:  2px;
+  --sp-xs:   4px;
+  --sp-sm:   8px;
+  --sp-md:   12px;
+  --sp-base: 16px;
+  --sp-lg:   24px;
+  --sp-xl:   32px;
+  --sp-2xl:  48px;
+  --sp-3xl:  64px;
+  --sp-4xl:  96px;
+
+  /* Radius - Minimal, industrial aesthetic */
+  --radius-none: 0;
+  --radius-sm:   2px;
+  --radius-md:   4px;
+
+  /* Typography */
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-mono:    'Space Mono', 'Courier New', monospace;
+
+  /* Layout */
+  --max-width:     1200px;
+  --nav-height:    56px;
+  --sidebar-width: 280px;
+
+  /* Animation */
+  --transition-fast: 150ms ease-out;
+}
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* Noise overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-bright);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-dim);
+}
+
+/* Links */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-bright);
+}
+
+/* Focus states */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

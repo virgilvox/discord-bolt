@@ -204,12 +204,28 @@ Delete a message.
 
 ### defer
 
-Defer an interaction response.
+Defer an interaction response. **Use this as the first action when your command takes more than 3 seconds.**
+
+Discord requires responses within 3 seconds. After deferring, you have 15 minutes to respond.
 
 ```yaml
+# Always defer first for slow commands
 - defer:
-    ephemeral: true
+    ephemeral: true       # Only visible to invoking user
+
+# Your slow operations here...
+- call_flow:
+    flow: slow_operation
+    as: result
+
+# reply automatically uses followUp when deferred
+- reply:
+    content: "Done: ${result}"
 ```
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `ephemeral` | boolean | `false` | If true, response is only visible to the user |
 
 ### update_message
 

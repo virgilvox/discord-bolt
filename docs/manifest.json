@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "title": "FURLOW Documentation",
+  "sections": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "icon": "fas fa-rocket",
+      "pages": [
+        { "id": "installation", "title": "Installation", "path": "guides/installation.md" },
+        { "id": "quickstart", "title": "Quick Start", "path": "guides/quickstart.md" },
+        { "id": "configuration", "title": "Configuration", "path": "guides/configuration.md" }
+      ]
+    },
+    {
+      "id": "guides",
+      "title": "Guides",
+      "icon": "fas fa-book",
+      "pages": [
+        { "id": "expression-language", "title": "Expression Language", "path": "expression-language.md" },
+        { "id": "multi-file", "title": "Multi-File Bots", "path": "multi-file.md" }
+      ]
+    },
+    {
+      "id": "reference",
+      "title": "Reference",
+      "icon": "fas fa-code",
+      "pages": [
+        { "id": "actions", "title": "Actions", "path": "reference/actions/_index.md", "badge": "84" },
+        { "id": "expressions", "title": "Expressions", "path": "reference/expressions/_index.md", "badge": "71 + 50" },
+        { "id": "events", "title": "Events", "path": "reference/events.md", "badge": "76" },
+        { "id": "cli", "title": "CLI", "path": "reference/cli.md" }
+      ]
+    },
+    {
+      "id": "builtins",
+      "title": "Builtins",
+      "icon": "fas fa-puzzle-piece",
+      "pages": [
+        { "id": "afk", "title": "AFK", "path": "builtins/afk.md" },
+        { "id": "auto-responder", "title": "Auto Responder", "path": "builtins/auto-responder.md" },
+        { "id": "giveaways", "title": "Giveaways", "path": "builtins/giveaways.md" },
+        { "id": "leveling", "title": "Leveling", "path": "builtins/leveling.md" },
+        { "id": "logging", "title": "Logging", "path": "builtins/logging.md" },
+        { "id": "moderation", "title": "Moderation", "path": "builtins/moderation.md" },
+        { "id": "music", "title": "Music", "path": "builtins/music.md" },
+        { "id": "polls", "title": "Polls", "path": "builtins/polls.md" },
+        { "id": "reaction-roles", "title": "Reaction Roles", "path": "builtins/reaction-roles.md" },
+        { "id": "reminders", "title": "Reminders", "path": "builtins/reminders.md" },
+        { "id": "starboard", "title": "Starboard", "path": "builtins/starboard.md" },
+        { "id": "tickets", "title": "Tickets", "path": "builtins/tickets.md" },
+        { "id": "utilities", "title": "Utilities", "path": "builtins/utilities.md" },
+        { "id": "welcome", "title": "Welcome", "path": "builtins/welcome.md" }
+      ]
+    },
+    {
+      "id": "examples",
+      "title": "Examples",
+      "icon": "fas fa-lightbulb",
+      "pages": [
+        { "id": "simple-bot", "title": "Simple Bot", "path": "examples/simple-bot/README.md" }
+      ]
+    },
+    {
+      "id": "packages",
+      "title": "Packages",
+      "icon": "fas fa-box",
+      "pages": [
+        { "id": "pipes", "title": "Pipes", "path": "packages/pipes.md" }
+      ]
+    }
+  ]
+}

@@ -64,12 +64,40 @@ Replies to an interaction (slash command, button, etc.).
 
 ### `defer`
 
-Defers an interaction response (shows "Bot is thinking...").
+Defers an interaction response (shows "Bot is thinking..."). **Required** when your command takes longer than 3 seconds to complete.
+
+**When to use:**
+- Commands that call external APIs
+- Commands that process large amounts of data
+- Commands that run multiple flows
+- Any operation that might take more than 3 seconds
 
 ```yaml
 - defer:
-    ephemeral: true                    # Optional: Ephemeral thinking
+    ephemeral: true                    # Optional: Only visible to user
 ```
+
+**Full example:**
+```yaml
+commands:
+  - name: slow-command
+    description: "A command that takes time"
+    actions:
+      # ALWAYS defer first for slow commands
+      - defer:
+          ephemeral: true
+
+      # Now you have up to 15 minutes
+      - call_flow:
+          flow: long_running_operation
+          as: result
+
+      # reply automatically uses followUp when deferred
+      - reply:
+          content: "Done! Result: ${result}"
+```
+
+**Important:** Discord requires a response within 3 seconds. If you don't defer, the user sees "This interaction failed". After deferring, you have 15 minutes to respond.
 
 ### `followup`
 

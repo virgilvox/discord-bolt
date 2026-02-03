@@ -1,0 +1,323 @@
+/* ========================================
+   FURLOW DESIGN SYSTEM - Markdown Styles
+   ======================================== */
+
+.markdown-content {
+  max-width: 800px;
+  line-height: 1.7;
+}
+
+/* Headings */
+.markdown-content h1 {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: var(--sp-xl);
+  padding-bottom: var(--sp-md);
+  border-bottom: 2px solid var(--accent);
+}
+
+.markdown-content h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-heading);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: var(--sp-2xl);
+  margin-bottom: var(--sp-lg);
+  padding-left: var(--sp-md);
+  border-left: 3px solid var(--accent-dim);
+}
+
+.markdown-content h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-bright);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: var(--sp-xl);
+  margin-bottom: var(--sp-md);
+}
+
+.markdown-content h4 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-bright);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: var(--sp-lg);
+  margin-bottom: var(--sp-sm);
+}
+
+/* Paragraphs */
+.markdown-content p {
+  margin-bottom: var(--sp-md);
+  color: var(--text);
+}
+
+/* Links */
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--accent-dim);
+  transition: all var(--transition-fast);
+}
+
+.markdown-content a:hover {
+  color: var(--accent-bright);
+  border-bottom-color: var(--accent-bright);
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin: var(--sp-md) 0;
+  padding-left: var(--sp-xl);
+}
+
+.markdown-content li {
+  margin: var(--sp-xs) 0;
+  color: var(--text);
+}
+
+.markdown-content li::marker {
+  color: var(--accent-dim);
+}
+
+/* Nested lists */
+.markdown-content li ul,
+.markdown-content li ol {
+  margin: var(--sp-xs) 0;
+}
+
+/* Code */
+.markdown-content code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-code);
+  padding: 2px 6px;
+  border: var(--border-solid);
+  color: var(--accent);
+}
+
+.markdown-content pre {
+  margin: var(--sp-lg) 0;
+  background: var(--bg-code);
+  border: var(--border-solid);
+  border-left: 3px solid var(--accent-dim);
+  padding: var(--sp-lg);
+  overflow-x: auto;
+  position: relative;
+}
+
+.markdown-content pre code {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+/* Shiki code highlighting */
+.markdown-content .shiki {
+  background: var(--bg-code) !important;
+  padding: var(--sp-lg);
+  border: var(--border-solid);
+  border-left: 3px solid var(--accent-dim);
+  overflow-x: auto;
+  margin: var(--sp-lg) 0;
+}
+
+.markdown-content .shiki code {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  border-left: 3px solid var(--accent-dim);
+  padding-left: var(--sp-lg);
+  margin: var(--sp-lg) 0;
+  color: var(--text-dim);
+}
+
+.markdown-content blockquote p {
+  color: var(--text-dim);
+}
+
+/* Tables */
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--sp-lg) 0;
+  font-size: 13px;
+}
+
+.markdown-content th {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-bright);
+  background: var(--bg-raised);
+  padding: var(--sp-sm) var(--sp-md);
+  text-align: left;
+  border: var(--border-solid);
+}
+
+.markdown-content td {
+  padding: var(--sp-sm) var(--sp-md);
+  border: var(--border-solid);
+  color: var(--text);
+}
+
+.markdown-content tr:hover td {
+  background: var(--bg-hover);
+}
+
+/* Horizontal rules */
+.markdown-content hr {
+  border: none;
+  border-top: var(--border-dashed);
+  margin: var(--sp-2xl) 0;
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border: var(--border-solid);
+  margin: var(--sp-lg) 0;
+}
+
+/* Task lists */
+.markdown-content .task-list-item {
+  list-style: none;
+  margin-left: calc(-1 * var(--sp-xl));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+}
+
+.markdown-content .task-list-item input[type="checkbox"] {
+  margin-top: 4px;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  border: var(--border-solid);
+  cursor: default;
+  position: relative;
+}
+
+.markdown-content .task-list-item input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.markdown-content .task-list-item input[type="checkbox"]:checked::after {
+  content: '\f00c';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 9px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--bg);
+}
+
+/* Alerts/Admonitions */
+.markdown-content .alert,
+.markdown-content .admonition {
+  padding: var(--sp-md) var(--sp-lg);
+  margin: var(--sp-lg) 0;
+  border-left: 3px solid;
+}
+
+.markdown-content .alert-info,
+.markdown-content .admonition-note {
+  background: var(--blue-dim);
+  border-color: var(--blue);
+}
+
+.markdown-content .alert-warning,
+.markdown-content .admonition-warning {
+  background: var(--yellow-dim);
+  border-color: var(--yellow);
+}
+
+.markdown-content .alert-danger,
+.markdown-content .admonition-danger {
+  background: var(--red-dim);
+  border-color: var(--red);
+}
+
+.markdown-content .alert-tip,
+.markdown-content .admonition-tip {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+
+/* Kbd */
+.markdown-content kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-raised);
+  border: var(--border-solid);
+  border-bottom: 2px solid var(--border-bright);
+  padding: 2px 6px;
+  color: var(--text-bright);
+}
+
+/* Definition lists */
+.markdown-content dl {
+  margin: var(--sp-lg) 0;
+}
+
+.markdown-content dt {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: var(--sp-md);
+}
+
+.markdown-content dd {
+  margin-left: var(--sp-lg);
+  color: var(--text);
+  padding-left: var(--sp-md);
+  border-left: 1px dashed var(--border-mid);
+  margin-top: var(--sp-xs);
+}
+
+/* Footnotes */
+.markdown-content .footnotes {
+  margin-top: var(--sp-2xl);
+  padding-top: var(--sp-lg);
+  border-top: var(--border-dashed);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.markdown-content .footnote-ref {
+  font-size: 10px;
+  vertical-align: super;
+}
+
+/* Abbreviations */
+.markdown-content abbr {
+  text-decoration: underline dotted var(--text-ghost);
+  cursor: help;
+}
