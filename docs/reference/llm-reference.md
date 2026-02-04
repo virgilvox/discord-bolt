@@ -226,26 +226,41 @@ identity:
 presence:
   status: online  # online | idle | dnd | invisible
   activity:
-    type: playing  # playing | streaming | listening | watching | competing
-    name: "with YAML"
+    type: playing  # playing | streaming | listening | watching | competing | custom
+    text: "with YAML"
+    url: "https://twitch.tv/..."  # for streaming type
+    state: "Status text"  # for custom type
 ```
 
 ### Permissions
 
 ```yaml
 permissions:
-  default_level: 0
+  owner:
+    users:
+      - "123456789012345678"
   levels:
-    0: Everyone
-    1: Moderator
-    2: Admin
-    3: Owner
-  owner_ids:
-    - "123456789"
-  roles:
-    admin:
-      id: "987654321"
+    - name: Everyone
+      level: 0
+    - name: Moderator
+      level: 1
+      roles:
+        - "111111111111111111"
+      permissions:
+        - manage_messages
+    - name: Admin
       level: 2
+      roles:
+        - "222222222222222222"
+      permissions:
+        - administrator
+    - name: Owner
+      level: 3
+      users:
+        - "123456789012345678"
+  defaults:
+    allow:
+      level: 0
 ```
 
 ### State
@@ -341,45 +356,63 @@ Call flows with:
 
 ```yaml
 components:
-  - custom_id: confirm_btn
-    type: button
-    style: success  # primary | secondary | success | danger | link
-    label: Confirm
-    emoji: "check"
-    actions:
-      - update_message:
-          content: "Confirmed!"
-          components: []
+  buttons:
+    confirm_btn:
+      type: button
+      style: success  # primary | secondary | success | danger | link
+      label: "Confirm"
+      emoji: "✅"
+      actions:
+        - update_message:
+            content: "Confirmed!"
+            components: []
 
-  - custom_id: role_select
-    type: select
-    placeholder: Select roles
-    min_values: 1
-    max_values: 3
-    options:
-      - label: Red Team
-        value: red
-        emoji: "red_circle"
-    actions:
-      - batch:
-          items: "${interaction.values}"
-          as: role
-          actions:
-            - toggle_role:
-                role: "${state.guild.roles[role]}"
+    cancel_btn:
+      type: button
+      style: danger
+      label: "Cancel"
+      actions:
+        - update_message:
+            content: "Cancelled."
+            components: []
 
-  - custom_id: feedback_modal
-    type: modal
-    title: Submit Feedback
-    components:
-      - custom_id: feedback_text
-        label: Your Feedback
-        style: paragraph  # short | paragraph
-        required: true
-    actions:
-      - send_message:
-          channel: "${state.guild.feedback_channel}"
-          content: "${fields.feedback_text}"
+  selects:
+    role_select:
+      type: select
+      placeholder: "Select roles"
+      min_values: 1
+      max_values: 3
+      options:
+        - label: "Red Team"
+          value: "red"
+          emoji: "🔴"
+        - label: "Blue Team"
+          value: "blue"
+          emoji: "🔵"
+      actions:
+        - batch:
+            items: "${interaction.values}"
+            as: role
+            actions:
+              - toggle_role:
+                  role: "${state.guild.roles[role]}"
+
+  modals:
+    feedback_modal:
+      custom_id: "feedback_modal"
+      title: "Submit Feedback"
+      components:
+        - type: action_row
+          components:
+            - type: text_input
+              custom_id: "feedback_text"
+              label: "Your Feedback"
+              style: paragraph  # short | paragraph
+              required: true
+      actions:
+        - send_message:
+            channel: "${state.guild.feedback_channel}"
+            content: "${fields.feedback_text}"
 ```
 
 ### Embeds
@@ -437,17 +470,46 @@ voice:
 
 ```yaml
 pipes:
-  - name: api
-    type: http
-    url: https://api.example.com
-    auth:
-      type: bearer
-      token: "${env.API_TOKEN}"
+  pipes:
+    api:
+      type: http
+      base_url: "https://api.example.com"
+      auth:
+        type: bearer
+        token: "${env.API_TOKEN}"
+      timeout: "30s"
+      retry:
+        attempts: 3
+        delay: "1s"
 
-  - name: events
-    type: websocket
-    url: wss://events.example.com
-    reconnect: true
+    events:
+      type: websocket
+      url: "wss://events.example.com"
+      reconnect:
+        enabled: true
+        delay: "5s"
+        max_attempts: 10
+      handlers:
+        - event: "message"
+          actions:
+            - log:
+                message: "Received: ${data}"
+
+    incoming:
+      type: webhook
+      path: "/webhook/github"
+      method: POST
+      verification:
+        type: hmac
+        secret: "${env.WEBHOOK_SECRET}"
+        header: "X-Hub-Signature-256"
+        algorithm: sha256
+      handlers:
+        - event: "push"
+          actions:
+            - send_message:
+                channel: "${state.guild.dev_channel}"
+                content: "New push to ${payload.repository.name}"
 ```
 
 ### Automod
