@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 
 interface NavItem {
   id: string;
@@ -14,7 +14,7 @@ interface Props {
   activeId?: string;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'select', item: NavItem): void;

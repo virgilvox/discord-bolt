@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSchemaStore } from '@/stores/schema';
 import FurlowButton from '@/components/common/FurlowButton.vue';
 import FurlowInput from '@/components/common/FurlowInput.vue';
+import { useFocusTrap } from '@/composables/useKeyboard';
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -14,6 +15,27 @@ const schemaStore = useSchemaStore();
 
 const newProjectName = ref('');
 const showNewProject = ref(false);
+const modalRef = ref<HTMLElement | null>(null);
+
+// Focus trap for accessibility
+const { activate: activateFocusTrap, deactivate: deactivateFocusTrap } = useFocusTrap(modalRef);
+
+// Handle escape key
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    emit('close');
+  }
+};
+
+onMounted(() => {
+  activateFocusTrap();
+  window.addEventListener('keydown', handleKeyDown);
+});
+
+onUnmounted(() => {
+  deactivateFocusTrap();
+  window.removeEventListener('keydown', handleKeyDown);
+});
 
 const projects = computed(() =>
   [...schemaStore.savedProjects].sort(
@@ -51,10 +73,10 @@ const handleDeleteProject = (projectId: string, event: Event) => {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="emit('close')">
-    <div class="project-manager">
+  <div class="modal-overlay" @click.self="emit('close')" role="dialog" aria-modal="true" aria-labelledby="project-manager-title">
+    <div ref="modalRef" class="project-manager">
       <div class="modal-header">
-        <h2 class="modal-title">PROJECTS</h2>
+        <h2 id="project-manager-title" class="modal-title">PROJECTS</h2>
         <button class="modal-close" @click="emit('close')">
           <i class="fas fa-times"></i>
         </button>

@@ -18,7 +18,7 @@
  * data produces the same result.
  */
 
-import type { FurlowSpec, Action, EventHandler, FlowDefinition, FlowParameter } from '@furlow/schema';
+import type { FurlowSpec, Action, EventHandler, FlowDefinition, FlowParameter, BuiltinReference, IntentsConfig } from '@furlow/schema';
 
 /** Reserved keys that are not action names */
 const RESERVED_KEYS = new Set(['when', 'error_handler']);
@@ -114,14 +114,17 @@ function normalizeNestedActions(action: Record<string, unknown>): Record<string,
   normalizeArrayProp('then');
   normalizeArrayProp('else');
 
-  // flow_switch - cases (object of arrays) and default
+  // flow_switch - cases (object of arrays or single actions) and default
   if (action.cases && typeof action.cases === 'object' && !Array.isArray(action.cases)) {
     const normalizedCases: Record<string, Action[]> = {};
     for (const [key, caseActions] of Object.entries(action.cases as Record<string, unknown>)) {
       if (Array.isArray(caseActions)) {
         normalizedCases[key] = normalizeActionsDeep(caseActions as Action[]);
+      } else if (caseActions && typeof caseActions === 'object') {
+        // Single action - wrap in array and normalize
+        normalizedCases[key] = normalizeActionsDeep([caseActions as Action]);
       } else {
-        // Preserve non-array values (shouldn't happen, but be safe)
+        // Preserve other values (null, undefined, etc.) - will fail validation
         normalizedCases[key] = caseActions as Action[];
       }
     }
@@ -135,15 +138,45 @@ function normalizeNestedActions(action: Record<string, unknown>): Record<string,
   // parallel, batch - actions array
   normalizeArrayProp('actions');
 
-  // batch - each (actions for each item)
-  normalizeArrayProp('each');
+  // batch - each (actions for each item, can be single action or array)
+  if (action.each !== undefined) {
+    const eachVal = action.each;
+    if (Array.isArray(eachVal)) {
+      result.each = normalizeActionsDeep(eachVal as Action[]);
+    } else if (eachVal && typeof eachVal === 'object') {
+      // Single action - wrap in array and normalize
+      result.each = normalizeActionsDeep([eachVal as Action]);
+    }
+  }
 
-  // try - try/catch/finally
-  normalizeArrayProp('try');
+  // try action - uses 'do' for main block (already handled above), plus catch/finally
+  // Note: TryAction schema has { do: Action[], catch?: Action[], finally?: Action[] }
+  // The 'do' property is already normalized above with flow_while/repeat
   normalizeArrayProp('catch');
   normalizeArrayProp('finally');
 
   return result;
+}
+
+/**
+ * Normalize flow parameters from string format to object format.
+ *
+ * YAML allows: parameters: ['param1', 'param2']
+ * Schema expects: parameters: [{ name: 'param1' }, { name: 'param2' }]
+ *
+ * @internal
+ */
+function normalizeFlowParameters(parameters?: (string | FlowParameter)[]): FlowParameter[] | undefined {
+  if (!parameters || !Array.isArray(parameters)) {
+    return parameters as FlowParameter[] | undefined;
+  }
+
+  return parameters.map((param) => {
+    if (typeof param === 'string') {
+      return { name: param };
+    }
+    return param;
+  });
 }
 
 /**
@@ -169,6 +202,30 @@ export function normalizeSpec(spec: FurlowSpec): FurlowSpec {
   }
 
   const normalized = { ...spec };
+
+  // Normalize intents: array format to object format
+  // YAML allows: intents: ['guilds', 'guild_members']
+  // Schema expects: intents: { explicit: ['guilds', 'guild_members'] }
+  if (normalized.intents) {
+    if (Array.isArray(normalized.intents)) {
+      normalized.intents = { explicit: normalized.intents } as IntentsConfig;
+    }
+  }
+
+  // Normalize builtins: object format to array format
+  // YAML allows: builtins: { moderation: { enabled: true }, music: { dj_role: "..." } }
+  // Schema expects: builtins: [{ module: 'moderation', config: { enabled: true } }, ...]
+  if (normalized.builtins && !Array.isArray(normalized.builtins)) {
+    const builtinsObj = normalized.builtins as unknown as Record<string, Record<string, unknown>>;
+    const normalizedBuiltins: BuiltinReference[] = [];
+    for (const [moduleName, config] of Object.entries(builtinsObj)) {
+      normalizedBuiltins.push({
+        module: moduleName,
+        config: config || {},
+      });
+    }
+    normalized.builtins = normalizedBuiltins;
+  }
 
   // Normalize commands[].actions and commands[].subcommands[].actions
   if (normalized.commands) {
@@ -232,23 +289,26 @@ export function normalizeSpec(spec: FurlowSpec): FurlowSpec {
     }
   }
 
-  // Normalize flows[].actions
+  // Normalize flows[].actions and flows[].parameters
   // Flows can be either an array or an object keyed by flow name
+  // Parameters can be strings or objects
   if (normalized.flows) {
     const flows = normalized.flows;
     if (Array.isArray(flows)) {
       normalized.flows = flows.map((flow) => ({
         ...flow,
+        parameters: normalizeFlowParameters(flow.parameters),
         actions: normalizeActionsDeep(flow.actions),
       }));
     } else {
       // Object format: { log_command: { parameters: [...], actions: [...] } }
-      const flowsObj = flows as unknown as Record<string, { actions: Action[], parameters?: FlowParameter[] }>;
+      const flowsObj = flows as unknown as Record<string, { actions: Action[], parameters?: (string | FlowParameter)[] }>;
       const normalizedFlows: FlowDefinition[] = [];
       for (const [flowName, flowDef] of Object.entries(flowsObj)) {
         normalizedFlows.push({
           name: flowName,
           ...flowDef,
+          parameters: normalizeFlowParameters(flowDef.parameters),
           actions: normalizeActionsDeep(flowDef.actions),
         });
       }

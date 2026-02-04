@@ -11,6 +11,24 @@ const router = useRouter();
 
 const { manifest, loadDoc, currentDoc, loading, error } = useDocs();
 
+const mobileSidebarOpen = ref(false);
+const mobileTocOpen = ref(false);
+
+const toggleMobileSidebar = () => {
+  mobileSidebarOpen.value = !mobileSidebarOpen.value;
+  if (mobileSidebarOpen.value) mobileTocOpen.value = false;
+};
+
+const toggleMobileToc = () => {
+  mobileTocOpen.value = !mobileTocOpen.value;
+  if (mobileTocOpen.value) mobileSidebarOpen.value = false;
+};
+
+const closeMobilePanels = () => {
+  mobileSidebarOpen.value = false;
+  mobileTocOpen.value = false;
+};
+
 const slug = computed(() => {
   const params = route.params.pathMatch;
   if (Array.isArray(params)) {
@@ -55,7 +73,8 @@ onMounted(async () => {
 
 <template>
   <div class="docs-layout">
-    <aside class="docs-sidebar">
+    <!-- Desktop sidebar -->
+    <aside class="docs-sidebar desktop-only">
       <DocNav
         v-if="manifest"
         :manifest="manifest"
@@ -84,10 +103,65 @@ onMounted(async () => {
         </template>
       </article>
 
-      <aside class="docs-toc">
+      <!-- Desktop TOC -->
+      <aside class="docs-toc desktop-toc">
         <TableOfContents v-if="currentDoc" :content="currentDoc" />
       </aside>
     </main>
+
+    <!-- Mobile bottom navigation -->
+    <nav class="mobile-docs-nav mobile-only">
+      <button
+        :class="['mobile-nav-btn', { active: mobileSidebarOpen }]"
+        @click="toggleMobileSidebar"
+      >
+        <i class="fas fa-list"></i>
+        <span>NAV</span>
+      </button>
+      <button
+        :class="['mobile-nav-btn', { active: mobileTocOpen }]"
+        @click="toggleMobileToc"
+      >
+        <i class="fas fa-bookmark"></i>
+        <span>ON PAGE</span>
+      </button>
+    </nav>
+
+    <!-- Mobile sidebar overlay -->
+    <div
+      :class="['mobile-overlay', { open: mobileSidebarOpen || mobileTocOpen }]"
+      @click="closeMobilePanels"
+    ></div>
+
+    <!-- Mobile sidebar panel -->
+    <aside :class="['mobile-docs-sidebar', { open: mobileSidebarOpen }]">
+      <div class="mobile-panel-header">
+        <span class="mobile-panel-title">NAVIGATION</span>
+        <button class="mobile-panel-close" @click="mobileSidebarOpen = false">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mobile-panel-body" @click="closeMobilePanels">
+        <DocNav
+          v-if="manifest"
+          :manifest="manifest"
+          :activeId="currentPage?.id"
+        />
+      </div>
+    </aside>
+
+    <!-- Mobile TOC panel -->
+    <aside :class="['mobile-docs-toc', { open: mobileTocOpen }]">
+      <div class="mobile-panel-header">
+        <span class="mobile-panel-title">ON THIS PAGE</span>
+        <button class="mobile-panel-close" @click="mobileTocOpen = false">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mobile-panel-body" @click="closeMobilePanels">
+        <TableOfContents v-if="currentDoc" :content="currentDoc" />
+      </div>
+    </aside>
   </div>
 </template>
 
@@ -180,23 +254,197 @@ onMounted(async () => {
   color: var(--text-dim);
 }
 
+/* Desktop only */
+.desktop-only {
+  display: block;
+}
+
+.desktop-toc {
+  display: block;
+}
+
+/* Mobile only */
+.mobile-only {
+  display: none;
+}
+
+/* Mobile navigation bar */
+.mobile-docs-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border-top: var(--border-solid);
+  z-index: 100;
+  padding: var(--sp-xs) 0;
+  padding-bottom: env(safe-area-inset-bottom, var(--sp-xs));
+  justify-content: center;
+  gap: var(--sp-lg);
+}
+
+.mobile-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--sp-sm) var(--sp-xl);
+  color: var(--text-dim);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  min-height: 52px;
+}
+
+.mobile-nav-btn i {
+  font-size: 18px;
+}
+
+.mobile-nav-btn:hover,
+.mobile-nav-btn.active {
+  color: var(--accent);
+}
+
+/* Mobile overlay */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-fast);
+  display: none;
+}
+
+.mobile-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile panels */
+.mobile-docs-sidebar,
+.mobile-docs-toc {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 85%;
+  max-width: 320px;
+  background: var(--bg-sidebar);
+  z-index: 201;
+  transform: translateX(-100%);
+  transition: transform var(--transition-fast);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  flex-direction: column;
+}
+
+.mobile-docs-sidebar {
+  left: 0;
+}
+
+.mobile-docs-toc {
+  left: auto;
+  right: 0;
+  transform: translateX(100%);
+}
+
+.mobile-docs-sidebar.open,
+.mobile-docs-toc.open {
+  transform: translateX(0);
+}
+
+.mobile-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-md) var(--sp-lg);
+  border-bottom: var(--border-solid);
+  background: var(--bg-panel);
+  flex-shrink: 0;
+}
+
+.mobile-panel-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.mobile-panel-close {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border-mid);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-panel-close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mobile-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (max-width: 1100px) {
-  .docs-toc {
+  .desktop-toc {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .docs-sidebar {
-    display: none;
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .mobile-overlay,
+  .mobile-docs-sidebar,
+  .mobile-docs-toc {
+    display: flex;
   }
 
   .docs-main {
     max-width: 100%;
+    padding-bottom: 72px;
   }
 
   .docs-content {
     padding: var(--sp-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-docs-sidebar,
+  .mobile-docs-toc {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .docs-content {
+    padding: var(--sp-md);
   }
 }
 </style>

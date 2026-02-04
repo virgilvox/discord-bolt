@@ -1141,3 +1141,110 @@ Records a metric value.
     labels:
       command: "${command.name}"
 ```
+
+---
+
+## Canvas Actions
+
+### `canvas_render`
+
+Renders an image using a pre-defined generator from `spec.canvas.generators`.
+
+```yaml
+# Define generators in your spec
+canvas:
+  generators:
+    welcome_card:
+      width: 800
+      height: 300
+      background: "#23272A"
+      layers:
+        - type: circle_image
+          x: 320
+          y: 40
+          radius: 80
+          src: "${user.displayAvatarURL}"
+        - type: text
+          x: 400
+          y: 215
+          text: "Welcome, ${user.displayName}!"
+          font: sans-serif
+          size: 32
+          color: "#FFFFFF"
+          align: center
+
+# Use in actions
+- canvas_render:
+    generator: "welcome_card"    # Generator name
+    context:                     # Variables for the generator
+      user: "${member.user}"
+    as: "welcome_image"          # Store result in variable
+
+# Send the image
+- reply:
+    files:
+      - attachment: "${welcome_image}"
+        name: "welcome.png"
+```
+
+### `render_layers`
+
+Renders canvas layers inline without requiring a pre-defined generator.
+
+```yaml
+- render_layers:
+    width: 800
+    height: 400
+    background: "#1a1a2e"
+    layers:
+      - type: rect
+        x: 0
+        y: 0
+        width: 800
+        height: 4
+        color: "#5865F2"
+      - type: circle_image
+        x: 320
+        y: 40
+        radius: 80
+        src: "${user.displayAvatarURL}"
+      - type: text
+        x: 400
+        y: 200
+        text: "Hello, ${user.displayName}!"
+        font: sans-serif
+        size: 32
+        color: "#FFFFFF"
+        align: center
+      - type: progress_bar
+        x: 100
+        y: 350
+        width: 600
+        height: 30
+        progress: "${xp / maxXp}"
+        background: "#484b4e"
+        fill: "#5865F2"
+        radius: 15
+    format: png                  # png (default) or jpeg
+    as: "my_image"
+
+- reply:
+    files:
+      - attachment: "${my_image}"
+        name: "image.png"
+```
+
+**Layer Types:**
+
+| Type | Description | Key Properties |
+|------|-------------|----------------|
+| `rect` | Rectangle | `width`, `height`, `color`, `radius` |
+| `text` | Text | `text`, `font`, `size`, `color`, `align` |
+| `image` | Image | `src`, `width`, `height`, `opacity` |
+| `circle_image` | Circular image | `src`, `radius`, `border` |
+| `progress_bar` | Progress bar | `progress` (0-1), `background`, `fill` |
+| `gradient` | Gradient fill | `direction`, `stops` |
+
+**Common Layer Properties:**
+- `x`, `y` - Position
+- `when` - Conditional expression

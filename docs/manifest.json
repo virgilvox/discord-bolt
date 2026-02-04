@@ -33,6 +33,22 @@
       ]
     },
     {
+      "id": "pipes",
+      "title": "Pipes",
+      "icon": "fas fa-plug",
+      "pages": [
+        { "id": "pipes-overview", "title": "Overview", "path": "packages/pipes/README.md" },
+        { "id": "pipes-http", "title": "HTTP", "path": "packages/pipes/http.md" },
+        { "id": "pipes-websocket", "title": "WebSocket", "path": "packages/pipes/websocket.md" },
+        { "id": "pipes-webhook", "title": "Webhook", "path": "packages/pipes/webhook.md" },
+        { "id": "pipes-mqtt", "title": "MQTT", "path": "packages/pipes/mqtt.md" },
+        { "id": "pipes-tcp-udp", "title": "TCP & UDP", "path": "packages/pipes/tcp-udp.md" },
+        { "id": "pipes-database", "title": "Database", "path": "packages/pipes/database.md" },
+        { "id": "pipes-file", "title": "File", "path": "packages/pipes/file.md" },
+        { "id": "pipes-examples", "title": "Examples", "path": "packages/pipes/examples.md" }
+      ]
+    },
+    {
       "id": "builtins",
       "title": "Builtins",
       "icon": "fas fa-puzzle-piece",
@@ -59,14 +75,6 @@
       "icon": "fas fa-lightbulb",
       "pages": [
         { "id": "simple-bot", "title": "Simple Bot", "path": "examples/simple-bot/README.md" }
-      ]
-    },
-    {
-      "id": "packages",
-      "title": "Packages",
-      "icon": "fas fa-box",
-      "pages": [
-        { "id": "pipes", "title": "Pipes", "path": "packages/pipes.md" }
       ]
     }
   ]

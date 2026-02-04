@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue';
+import { ref, provide, watch } from 'vue';
 import BuilderLayout from '@/components/builder/BuilderLayout.vue';
 import SectionNav from '@/components/builder/SectionNav.vue';
 import SchemaForm from '@/components/builder/SchemaForm.vue';
@@ -9,12 +9,86 @@ import ValidationPanel from '@/components/builder/ValidationPanel.vue';
 import BotPreview from '@/components/builder/BotPreview.vue';
 import ProjectManager from '@/components/builder/ProjectManager.vue';
 import { useSchemaStore } from '@/stores/schema';
+import { useKeyboard, useAnnounce } from '@/composables/useKeyboard';
 
 const schemaStore = useSchemaStore();
+const { announce } = useAnnounce();
 
 const activeSection = ref('identity');
 const showProjectManager = ref(false);
 const rightPanelTab = ref<'yaml' | 'preview' | 'validation'>('yaml');
+
+// Keyboard shortcuts
+useKeyboard([
+  {
+    key: 's',
+    ctrl: true,
+    action: () => {
+      schemaStore.saveProject();
+      announce('Project saved');
+    },
+    description: 'Save project',
+  },
+  {
+    key: 'e',
+    ctrl: true,
+    action: () => {
+      schemaStore.exportYaml();
+      announce('Exporting YAML');
+    },
+    description: 'Export YAML',
+  },
+  {
+    key: 'o',
+    ctrl: true,
+    action: () => {
+      showProjectManager.value = true;
+    },
+    description: 'Open projects',
+  },
+  {
+    key: 'Escape',
+    action: () => {
+      if (showProjectManager.value) {
+        showProjectManager.value = false;
+      }
+    },
+    description: 'Close modal',
+  },
+  {
+    key: '1',
+    ctrl: true,
+    action: () => {
+      rightPanelTab.value = 'yaml';
+      announce('YAML preview');
+    },
+    description: 'Show YAML',
+  },
+  {
+    key: '2',
+    ctrl: true,
+    action: () => {
+      rightPanelTab.value = 'preview';
+      announce('Bot preview');
+    },
+    description: 'Show preview',
+  },
+  {
+    key: '3',
+    ctrl: true,
+    action: () => {
+      rightPanelTab.value = 'validation';
+      announce('Validation panel');
+    },
+    description: 'Show validation',
+  },
+]);
+
+// Announce section changes for screen readers
+watch(activeSection, (section) => {
+  const sectionName = sections.find((s) => s.id === section)?.title || section;
+  announce(`Now editing ${sectionName}`);
+});
 
 const sections = [
   { id: 'identity', title: 'Identity', icon: 'fas fa-robot' },
@@ -63,20 +137,20 @@ provide('schemaStore', schemaStore);
         <div class="builder-header">
           <div class="header-left">
             <h1 class="builder-title">SCHEMA BUILDER</h1>
-            <span class="project-name">{{ schemaStore.currentProject?.name || 'Untitled' }}</span>
+            <span class="project-name">{{ schemaStore.spec.identity?.name || schemaStore.currentProject?.name || 'Untitled Bot' }}</span>
           </div>
           <div class="header-actions">
-            <button class="header-btn" @click="showProjectManager = true">
+            <button class="header-btn" @click="showProjectManager = true" title="Projects">
               <i class="fas fa-folder-open"></i>
-              PROJECTS
+              <span class="btn-text">PROJECTS</span>
             </button>
-            <button class="header-btn" @click="schemaStore.saveProject()">
+            <button class="header-btn" @click="schemaStore.saveProject()" title="Save">
               <i class="fas fa-save"></i>
-              SAVE
+              <span class="btn-text">SAVE</span>
             </button>
-            <button class="header-btn btn-primary" @click="schemaStore.exportYaml()">
+            <button class="header-btn btn-primary" @click="schemaStore.exportYaml()" title="Export">
               <i class="fas fa-download"></i>
-              EXPORT
+              <span class="btn-text">EXPORT</span>
             </button>
           </div>
         </div>
@@ -231,6 +305,85 @@ provide('schemaStore', schemaStore);
 
 .header-btn i {
   font-size: 11px;
+}
+
+/* Mobile responsive header */
+@media (max-width: 768px) {
+  .builder-header {
+    padding: var(--sp-sm) var(--sp-md);
+    flex-wrap: wrap;
+    gap: var(--sp-sm);
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .builder-title {
+    font-size: 14px;
+    letter-spacing: 1.5px;
+  }
+
+  .project-name {
+    display: none;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+  }
+
+  .header-btn {
+    padding: var(--sp-sm);
+    min-height: 40px;
+  }
+
+  .header-btn .btn-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions {
+    flex: 1;
+    justify-content: flex-end;
+  }
+
+  .header-btn {
+    padding: var(--sp-sm) var(--sp-md);
+  }
+}
+
+/* Form panel mobile */
+@media (max-width: 768px) {
+  .form-panel {
+    padding: var(--sp-md);
+  }
+
+  .form-title {
+    font-size: 16px;
+  }
+
+  .form-body {
+    max-width: 100%;
+  }
+}
+
+/* Right panel mobile adjustments */
+@media (max-width: 900px) {
+  .right-panel {
+    height: 100%;
+  }
+
+  .panel-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .panel-content {
+    height: calc(100% - 44px);
+  }
 }
 
 .main-content {

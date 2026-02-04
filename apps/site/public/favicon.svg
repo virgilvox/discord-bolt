@@ -1,0 +1,19 @@
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- FURLOW Favicon: Simplified Toggle Stack -->
+  <!-- Background -->
+  <rect width="32" height="32" fill="#0a0a0a"/>
+
+  <!-- Toggle 1: ON -->
+  <rect x="4" y="5" width="24" height="6" fill="#ff6b35" opacity="0.2"/>
+  <rect x="4" y="5" width="24" height="6" stroke="#ff6b35" stroke-width="1.5"/>
+  <rect x="19" y="6.5" width="8" height="3" fill="#ff6b35"/>
+
+  <!-- Toggle 2: OFF -->
+  <rect x="4" y="13" width="24" height="6" stroke="#ff6b35" stroke-width="1.5" opacity="0.5"/>
+  <rect x="5" y="14.5" width="8" height="3" fill="#ff6b35" opacity="0.35"/>
+
+  <!-- Toggle 3: ON -->
+  <rect x="4" y="21" width="24" height="6" fill="#ff6b35" opacity="0.2"/>
+  <rect x="4" y="21" width="24" height="6" stroke="#ff6b35" stroke-width="1.5"/>
+  <rect x="19" y="22.5" width="8" height="3" fill="#ff6b35"/>
+</svg>

@@ -12,7 +12,7 @@ As of 2026-02-03, all 9 packages are published to npm with comprehensive test co
 |---------|---------|--------|-------|-------|
 | `@furlow/schema` | 1.0.0 | ✅ Published | - | Type definitions and JSON schemas |
 | `@furlow/storage` | 1.0.0 | ✅ Published | 41 | SQLite, PostgreSQL, Memory adapters |
-| `@furlow/core` | 1.0.0 | ✅ Published | 283 | Parser, expression, **84 action handlers**, flows, normalization |
+| `@furlow/core` | 1.0.0 | ✅ Published | 283 | Parser, expression, **85 action handlers**, flows, normalization |
 | `@furlow/discord` | 1.0.0 | ✅ Published | 53 | Discord.js wrapper, voice, video, interactions |
 | `@furlow/pipes` | 1.0.0 | ✅ Published | 234 | HTTP, WebSocket, Webhook, MQTT, TCP, UDP, File, Database |
 | `@furlow/testing` | 1.0.0 | ✅ Published | 142 | Mocks, fixtures, E2E tests, bot lifecycle |
@@ -45,7 +45,7 @@ As of 2026-02-03, all 9 packages are published to npm with comprehensive test co
 
 ## Complete Feature List
 
-### Action System (84 Actions)
+### Action System (85 Actions)
 
 | Category | Count | Actions |
 |----------|-------|---------|
@@ -57,7 +57,7 @@ As of 2026-02-03, all 9 packages are published to npm with comprehensive test co
 | **Component** | 1 | show_modal |
 | **Voice** | 17 | voice_join, voice_leave, voice_play, voice_pause, voice_resume, voice_stop, voice_skip, voice_seek, voice_volume, voice_set_filter, voice_search, queue_get, queue_add, queue_remove, queue_clear, queue_shuffle, queue_loop |
 | **Database** | 4 | db_insert, db_update, db_delete, db_query |
-| **Integration** | 8 | pipe_request, pipe_send, webhook_send, create_timer, cancel_timer, counter_increment, record_metric, canvas_render |
+| **Integration** | 9 | pipe_request, pipe_send, webhook_send, create_timer, cancel_timer, counter_increment, record_metric, canvas_render, render_layers |
 
 ### Voice System
 
@@ -421,6 +421,18 @@ Action shorthand is normalized BEFORE schema validation:
 ### Compliance Spec Fixes
 - Added `defer` action to standard and full compliance specs
 - Long-running tests now properly defer before executing
+
+### Canvas System Fix
+The `canvas_render` action now properly uses CanvasRenderer to render generators:
+- Before: Called `generator.render()` which didn't exist on YAML generator definitions
+- After: Uses `CanvasRenderer.renderGenerator()` for actual rendering
+- Added `render_layers` action for inline canvas rendering without pre-defined generators
+
+### Canvas Documentation and Examples
+- Created `examples/canvas-bot/` with comprehensive canvas usage examples
+- Updated `docs/reference/actions/_index.md` with complete canvas_render and render_layers documentation
+- Updated `docs/actions-reference.md` with canvas action documentation
+- Layer types: rect, text, image, circle_image, progress_bar, gradient
 
 ## Resources
 

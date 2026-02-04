@@ -7,6 +7,7 @@ import './assets/styles/variables.css';
 import './assets/styles/typography.css';
 import './assets/styles/components.css';
 import './assets/styles/markdown.css';
+import './assets/styles/responsive.css';
 
 const app = createApp(App);
 

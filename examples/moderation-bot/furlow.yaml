@@ -157,7 +157,7 @@ commands:
           - name: "Unlock"
             value: "unlock"
       - name: channel
-        description: Channel to lock (default: current)
+        description: "Channel to lock (default: current)"
         type: channel
         required: false
       - name: reason

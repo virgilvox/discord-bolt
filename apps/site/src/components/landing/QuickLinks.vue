@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import FurlowCard from '@/components/common/FurlowCard.vue';
-
 const links = [
   {
     icon: 'fas fa-book',
@@ -191,8 +189,35 @@ const links = [
 .link-red:hover { border-color: rgba(224, 85, 85, 0.5); }
 
 @media (max-width: 768px) {
+  .quick-links {
+    padding: var(--sp-2xl) var(--sp-md);
+  }
+
   .links-grid {
     grid-template-columns: 1fr;
+  }
+
+  .link-card {
+    padding: var(--sp-lg);
+  }
+
+  .link-icon {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .link-card {
+    gap: var(--sp-md);
+  }
+
+  .link-description {
+    font-size: 11px;
+  }
+
+  .section-num {
+    font-size: 28px;
   }
 }
 </style>

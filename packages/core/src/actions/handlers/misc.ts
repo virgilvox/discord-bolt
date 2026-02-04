@@ -14,7 +14,23 @@ import type {
   CounterIncrementAction,
   RecordMetricAction,
   CanvasRenderAction,
+  RenderLayersAction,
+  CanvasGenerator,
 } from '@furlow/schema';
+import { createCanvasRenderer, type CanvasRenderer } from '../../canvas/index.js';
+
+// Lazy-loaded canvas renderer instance
+let canvasRenderer: CanvasRenderer | null = null;
+
+/**
+ * Get or create canvas renderer (lazy initialization)
+ */
+function getCanvasRenderer(evaluator: any): CanvasRenderer {
+  if (!canvasRenderer) {
+    canvasRenderer = createCanvasRenderer({ evaluator });
+  }
+  return canvasRenderer;
+}
 
 /**
  * Parse duration string to milliseconds
@@ -370,6 +386,7 @@ const recordMetricHandler: ActionHandler<RecordMetricAction> = {
 
 /**
  * Canvas render action handler
+ * Renders a named generator defined in spec.canvas.generators
  */
 const canvasRenderHandler: ActionHandler<CanvasRenderAction> = {
   name: 'canvas_render',
@@ -380,7 +397,7 @@ const canvasRenderHandler: ActionHandler<CanvasRenderAction> = {
     // Get canvas generators from context
     const generators = (context as any)._canvasGenerators;
     const generatorName = await evaluator.interpolate(String(config.generator), context);
-    const generator = generators?.[generatorName];
+    const generator = generators?.[generatorName] as CanvasGenerator | undefined;
 
     if (!generator) {
       return { success: false, error: new Error(`Canvas generator "${generatorName}" not found`) };
@@ -395,8 +412,55 @@ const canvasRenderHandler: ActionHandler<CanvasRenderAction> = {
     }
 
     try {
-      // Call the generator
-      const result = await generator.render(renderContext);
+      // Get or create canvas renderer
+      const renderer = getCanvasRenderer(evaluator);
+
+      // Render the generator
+      const result = await renderer.renderGenerator(generator, renderContext);
+
+      if (config.as) {
+        (context as Record<string, unknown>)[config.as] = result;
+      }
+
+      return { success: true, data: result };
+    } catch (err) {
+      return { success: false, error: err as Error };
+    }
+  },
+};
+
+/**
+ * Render layers action handler
+ * Renders canvas layers inline without requiring a pre-defined generator
+ */
+const renderLayersHandler: ActionHandler<RenderLayersAction> = {
+  name: 'render_layers',
+  async execute(config, context): Promise<ActionResult> {
+    const deps = context._deps as HandlerDependencies;
+    const { evaluator } = deps;
+
+    try {
+      // Get or create canvas renderer
+      const renderer = getCanvasRenderer(evaluator);
+
+      // Resolve background color if it's an expression
+      let background: string | undefined;
+      if (config.background) {
+        background = await evaluator.interpolate(String(config.background), context);
+      }
+
+      // Render layers directly
+      const result = await renderer.renderLayers(
+        config.width,
+        config.height,
+        config.layers as any[],
+        context as Record<string, unknown>,
+        {
+          background,
+          format: config.format,
+          quality: config.quality,
+        }
+      );
 
       if (config.as) {
         (context as Record<string, unknown>)[config.as] = result;
@@ -424,4 +488,5 @@ export function registerMiscHandlers(
   registry.register(counterIncrementHandler);
   registry.register(recordMetricHandler);
   registry.register(canvasRenderHandler);
+  registry.register(renderLayersHandler);
 }

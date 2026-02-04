@@ -3,9 +3,11 @@ import { ref, computed } from 'vue';
 import { useSchemaStore } from '@/stores/schema';
 import FurlowButton from '@/components/common/FurlowButton.vue';
 import FurlowInput from '@/components/common/FurlowInput.vue';
+import ActionCard from './ActionCard.vue';
+import CommandOptionEditor from './CommandOptionEditor.vue';
 
 interface Props {
-  section: 'commands' | 'events' | 'flows';
+  section: string;
 }
 
 const props = defineProps<Props>();
@@ -13,6 +15,8 @@ const schemaStore = useSchemaStore();
 
 const showActionPicker = ref(false);
 const editingItem = ref<number | null>(null);
+const draggedActionIndex = ref<number | null>(null);
+const dragOverIndex = ref<number | null>(null);
 
 // Action categories
 const actionCategories = [
@@ -126,9 +130,9 @@ const addItem = () => {
     schemaStore.updateSection('commands', items as never);
   } else if (props.section === 'events') {
     items.push({
-      on: 'message_create',
+      event: 'message_create',
       actions: [],
-    });
+    } as never);
     schemaStore.updateSection('events', items as never);
   } else if (props.section === 'flows') {
     items.push({
@@ -144,7 +148,7 @@ const addItem = () => {
 const removeItem = (index: number) => {
   const items = [...sectionItems.value];
   items.splice(index, 1);
-  schemaStore.updateSection(props.section, items as never);
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
   if (editingItem.value === index) {
     editingItem.value = null;
   }
@@ -153,7 +157,7 @@ const removeItem = (index: number) => {
 const updateItem = (index: number, key: string, value: unknown) => {
   const items = [...sectionItems.value] as Record<string, unknown>[];
   items[index] = { ...items[index], [key]: value };
-  schemaStore.updateSection(props.section, items as never);
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
 };
 
 const addAction = (actionType: string) => {
@@ -166,7 +170,7 @@ const addAction = (actionType: string) => {
   actions.push({ action: actionType });
   items[editingItem.value] = { ...item, actions };
 
-  schemaStore.updateSection(props.section, items as never);
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
   showActionPicker.value = false;
 };
 
@@ -180,7 +184,71 @@ const removeAction = (actionIndex: number) => {
   actions.splice(actionIndex, 1);
   items[editingItem.value] = { ...item, actions };
 
-  schemaStore.updateSection(props.section, items as never);
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
+};
+
+// Drag and drop handlers
+const onDragStart = (index: number, event: DragEvent) => {
+  draggedActionIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  }
+};
+
+const onDragOver = (index: number, event: DragEvent) => {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+  dragOverIndex.value = index;
+};
+
+const onDragLeave = () => {
+  dragOverIndex.value = null;
+};
+
+const onDrop = (targetIndex: number, event: DragEvent) => {
+  event.preventDefault();
+
+  if (editingItem.value === null || draggedActionIndex.value === null) return;
+  if (draggedActionIndex.value === targetIndex) {
+    draggedActionIndex.value = null;
+    dragOverIndex.value = null;
+    return;
+  }
+
+  const items = [...sectionItems.value] as Record<string, unknown>[];
+  const item = items[editingItem.value];
+  const actions = [...((item.actions as unknown[]) || [])];
+
+  // Remove from old position and insert at new position
+  const [movedAction] = actions.splice(draggedActionIndex.value, 1);
+  actions.splice(targetIndex, 0, movedAction);
+
+  items[editingItem.value] = { ...item, actions };
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
+
+  draggedActionIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const onDragEnd = () => {
+  draggedActionIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const updateAction = (actionIndex: number, updatedAction: Record<string, unknown>) => {
+  if (editingItem.value === null) return;
+
+  const items = [...sectionItems.value] as Record<string, unknown>[];
+  const item = items[editingItem.value];
+  const actions = [...((item.actions as unknown[]) || [])] as Record<string, unknown>[];
+
+  actions[actionIndex] = updatedAction;
+  items[editingItem.value] = { ...item, actions };
+
+  schemaStore.updateSection(props.section as 'commands' | 'events' | 'flows', items as never);
 };
 </script>
 
@@ -212,7 +280,7 @@ const removeAction = (actionIndex: number) => {
         >
           <div class="item-header">
             <span class="item-name">
-              {{ (item as Record<string, unknown>).name || (item as Record<string, unknown>).on || `Item ${index + 1}` }}
+              {{ (item as Record<string, unknown>).name || (item as Record<string, unknown>).event || `Item ${index + 1}` }}
             </span>
             <button class="remove-btn" @click.stop="removeItem(index)">
               <i class="fas fa-times"></i>
@@ -249,6 +317,10 @@ const removeAction = (actionIndex: number) => {
             placeholder="Greet a user"
             @update:model-value="updateItem(editingItem!, 'description', $event)"
           />
+          <CommandOptionEditor
+            :options="((sectionItems[editingItem] as Record<string, unknown>).options as Record<string, unknown>[]) || []"
+            @update="updateItem(editingItem!, 'options', $event)"
+          />
         </template>
 
         <template v-else-if="section === 'events'">
@@ -256,8 +328,8 @@ const removeAction = (actionIndex: number) => {
             <label class="input-label">Event Type</label>
             <select
               class="select"
-              :value="(sectionItems[editingItem] as Record<string, unknown>).on as string || ''"
-              @change="updateItem(editingItem!, 'on', ($event.target as HTMLSelectElement).value)"
+              :value="(sectionItems[editingItem] as Record<string, unknown>).event as string || ''"
+              @change="updateItem(editingItem!, 'event', ($event.target as HTMLSelectElement).value)"
             >
               <option value="message_create">message_create</option>
               <option value="member_join">member_join</option>
@@ -266,7 +338,47 @@ const removeAction = (actionIndex: number) => {
               <option value="reaction_remove">reaction_remove</option>
               <option value="interaction_create">interaction_create</option>
               <option value="voice_state_update">voice_state_update</option>
+              <option value="channel_create">channel_create</option>
+              <option value="channel_delete">channel_delete</option>
+              <option value="role_create">role_create</option>
+              <option value="role_delete">role_delete</option>
+              <option value="thread_create">thread_create</option>
+              <option value="scheduled_event">scheduled_event</option>
             </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">
+              Condition (when)
+              <span class="field-type-badge">expr</span>
+            </label>
+            <input
+              type="text"
+              class="input"
+              :value="(sectionItems[editingItem] as Record<string, unknown>).when as string || ''"
+              placeholder="e.g. message.content | startsWith('!')"
+              @input="updateItem(editingItem!, 'when', ($event.target as HTMLInputElement).value || undefined)"
+            />
+            <span class="input-hint">Optional expression to filter when this handler runs</span>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Debounce</label>
+            <input
+              type="text"
+              class="input"
+              :value="(sectionItems[editingItem] as Record<string, unknown>).debounce as string || ''"
+              placeholder="e.g. 5s, 1m"
+              @input="updateItem(editingItem!, 'debounce', ($event.target as HTMLInputElement).value || undefined)"
+            />
+          </div>
+          <div class="input-group">
+            <label class="input-label">Throttle</label>
+            <input
+              type="text"
+              class="input"
+              :value="(sectionItems[editingItem] as Record<string, unknown>).throttle as string || ''"
+              placeholder="e.g. 10s, 1m"
+              @input="updateItem(editingItem!, 'throttle', ($event.target as HTMLInputElement).value || undefined)"
+            />
           </div>
         </template>
 
@@ -277,6 +389,26 @@ const removeAction = (actionIndex: number) => {
             placeholder="welcome_flow"
             @update:model-value="updateItem(editingItem!, 'name', $event)"
           />
+          <FurlowInput
+            :model-value="(sectionItems[editingItem] as Record<string, unknown>).description as string || ''"
+            label="Description"
+            placeholder="Handles new member welcome messages"
+            @update:model-value="updateItem(editingItem!, 'description', $event)"
+          />
+          <div class="input-group">
+            <label class="input-label">
+              Condition (when)
+              <span class="field-type-badge">expr</span>
+            </label>
+            <input
+              type="text"
+              class="input"
+              :value="(sectionItems[editingItem] as Record<string, unknown>).when as string || ''"
+              placeholder="e.g. guild.memberCount > 100"
+              @input="updateItem(editingItem!, 'when', ($event.target as HTMLInputElement).value || undefined)"
+            />
+            <span class="input-hint">Optional condition for when this flow can be called</span>
+          </div>
         </template>
       </div>
 
@@ -293,15 +425,24 @@ const removeAction = (actionIndex: number) => {
           <div
             v-for="(action, aIndex) in (sectionItems[editingItem] as Record<string, unknown>).actions as unknown[] || []"
             :key="aIndex"
-            class="action-card"
+            :class="[
+              'action-wrapper',
+              { dragging: draggedActionIndex === aIndex },
+              { 'drag-over': dragOverIndex === aIndex && draggedActionIndex !== aIndex }
+            ]"
+            draggable="true"
+            @dragstart="onDragStart(aIndex, $event)"
+            @dragover="onDragOver(aIndex, $event)"
+            @dragleave="onDragLeave"
+            @drop="onDrop(aIndex, $event)"
+            @dragend="onDragEnd"
           >
-            <div class="action-type">
-              <i class="fas fa-bolt"></i>
-              {{ (action as Record<string, unknown>).action }}
-            </div>
-            <button class="action-remove" @click="removeAction(aIndex)">
-              <i class="fas fa-trash"></i>
-            </button>
+            <ActionCard
+              :action="action as Record<string, unknown>"
+              :index="aIndex"
+              @update="updateAction"
+              @remove="removeAction"
+            />
           </div>
 
           <div v-if="!((sectionItems[editingItem] as Record<string, unknown>).actions as unknown[])?.length" class="empty-actions">
@@ -503,39 +644,28 @@ const removeAction = (actionIndex: number) => {
   gap: var(--sp-sm);
 }
 
-.action-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--bg);
-  border: var(--border-solid);
-  padding: var(--sp-sm) var(--sp-md);
+.action-wrapper {
+  cursor: grab;
+  transition: all var(--transition-fast);
 }
 
-.action-type {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-sm);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--accent);
+.action-wrapper:active {
+  cursor: grabbing;
 }
 
-.action-type i {
-  font-size: 10px;
+.action-wrapper.dragging {
+  opacity: 0.5;
 }
 
-.action-remove {
-  background: none;
-  border: none;
-  color: var(--text-ghost);
-  cursor: pointer;
-  font-size: 11px;
+.action-wrapper.dragging :deep(.action-card-main) {
+  border-style: dashed;
 }
 
-.action-remove:hover {
-  color: var(--red);
+.action-wrapper.drag-over :deep(.action-card-main) {
+  border-color: var(--accent);
+  background: var(--accent-faint);
 }
+
 
 .empty-actions {
   padding: var(--sp-lg);
@@ -662,5 +792,46 @@ const removeAction = (actionIndex: number) => {
   color: var(--text-ghost);
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.field-type-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--accent-dim);
+  background: var(--accent-faint);
+  padding: 1px 4px;
+  margin-left: auto;
+}
+
+.input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-bright);
+  background: var(--bg);
+  border: var(--border-solid);
+  padding: var(--sp-sm) var(--sp-md);
+  width: 100%;
+}
+
+.input:hover {
+  border-color: var(--border-mid);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-raised);
+}
+
+.input::placeholder {
+  color: var(--text-ghost);
+}
+
+.input-hint {
+  font-size: 10px;
+  color: var(--text-ghost);
 }
 </style>

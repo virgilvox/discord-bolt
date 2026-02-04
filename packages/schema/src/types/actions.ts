@@ -749,6 +749,18 @@ export interface CanvasRenderAction extends BaseAction {
   as?: string;
 }
 
+/** Render layers action - inline canvas rendering without pre-defined generator */
+export interface RenderLayersAction extends BaseAction {
+  action: 'render_layers';
+  width: number;
+  height: number;
+  background?: Expression;
+  layers: unknown[]; // CanvasLayer[] but kept loose for YAML flexibility
+  format?: 'png' | 'jpeg';
+  quality?: number;
+  as?: string;
+}
+
 /** Union of all action types */
 export type Action =
   | SendMessageAction
@@ -833,5 +845,6 @@ export type Action =
   | CounterIncrementAction
   | RecordMetricAction
   | CanvasRenderAction
+  | RenderLayersAction
   | VoiceSearchAction
   | QueueGetAction;

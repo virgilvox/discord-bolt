@@ -58,10 +58,11 @@ export const useSchemaStore = defineStore('schema', () => {
 
   // Load an existing project
   const loadProject = (projectId: string) => {
-    const project = savedProjects.value.find((p) => p.id === projectId);
+    const projects = savedProjects.value as Project[];
+    const project = projects.find((p: Project) => p.id === projectId);
     if (project) {
-      currentProject.value = { ...project };
-      spec.value = { ...project.spec };
+      currentProject.value = JSON.parse(JSON.stringify(project)) as Project;
+      spec.value = JSON.parse(JSON.stringify(project.spec)) as FurlowSpec;
     }
   };
 
@@ -89,7 +90,8 @@ export const useSchemaStore = defineStore('schema', () => {
 
   // Delete a project
   const deleteProject = (projectId: string) => {
-    savedProjects.value = savedProjects.value.filter((p) => p.id !== projectId);
+    const projects = savedProjects.value as Project[];
+    savedProjects.value = projects.filter((p: Project) => p.id !== projectId);
     persistProjects();
 
     if (currentProject.value?.id === projectId) {
@@ -109,14 +111,14 @@ export const useSchemaStore = defineStore('schema', () => {
   // Get the current YAML output
   const yamlOutput = computed(() => {
     // Filter out empty arrays and undefined values
-    const cleanSpec = Object.fromEntries(
-      Object.entries(spec.value).filter(([_, v]) => {
-        if (v === undefined || v === null) return false;
-        if (Array.isArray(v) && v.length === 0) return false;
-        if (typeof v === 'object' && Object.keys(v).length === 0) return false;
-        return true;
-      })
-    );
+    const entries = Object.entries(spec.value as Record<string, unknown>);
+    const filtered = entries.filter(([_, v]) => {
+      if (v === undefined || v === null) return false;
+      if (Array.isArray(v) && v.length === 0) return false;
+      if (typeof v === 'object' && Object.keys(v as object).length === 0) return false;
+      return true;
+    });
+    const cleanSpec = Object.fromEntries(filtered);
     return stringify(cleanSpec, { indent: 2 });
   });
 

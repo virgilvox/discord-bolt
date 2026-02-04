@@ -1,0 +1,593 @@
+# FURLOW Canvas Bot Example
+# Demonstrates custom image generation for Discord bots
+#
+# Features:
+# - Welcome card images for new members
+# - Rank/level cards with XP progress
+# - Custom profile cards
+# - Server stats images
+#
+# Prerequisites:
+# - Install the canvas module: npm install canvas
+# - For custom fonts, place .ttf files in a fonts/ directory
+
+version: "1.0"
+
+identity:
+  name: "Canvas Bot"
+  description: "A bot that generates custom images"
+
+intents:
+  explicit:
+    - guilds
+    - guild_members
+    - guild_messages
+    - message_content
+
+# ============================================
+# CANVAS CONFIGURATION
+# ============================================
+# Define custom image generators that can be
+# rendered and sent as message attachments
+# ============================================
+
+canvas:
+  # Register custom fonts (optional)
+  fonts:
+    Montserrat: "./fonts/Montserrat-Bold.ttf"
+    Roboto: "./fonts/Roboto-Regular.ttf"
+
+  # Define reusable image generators
+  generators:
+    # ----------------------------------------
+    # Welcome Card Generator
+    # ----------------------------------------
+    welcome_card:
+      width: 800
+      height: 300
+      background: "#23272A"
+      layers:
+        # Top accent bar
+        - type: rect
+          x: 0
+          y: 0
+          width: 800
+          height: 4
+          color: "#5865F2"
+
+        # User avatar (circular crop)
+        - type: circle_image
+          x: 320
+          y: 40
+          radius: 80
+          src: "${user.displayAvatarURL}"
+          border:
+            width: 4
+            color: "#5865F2"
+
+        # Welcome text
+        - type: text
+          x: 400
+          y: 215
+          text: "Welcome, ${user.displayName}!"
+          font: sans-serif
+          size: 32
+          color: "#FFFFFF"
+          align: center
+          baseline: top
+
+        # Server name
+        - type: text
+          x: 400
+          y: 255
+          text: "to ${guild.name}"
+          font: sans-serif
+          size: 22
+          color: "#B9BBBE"
+          align: center
+          baseline: top
+
+    # ----------------------------------------
+    # Rank Card Generator
+    # ----------------------------------------
+    rank_card:
+      width: 934
+      height: 282
+      background: "#23272A"
+      layers:
+        # Card border with rounded corners
+        - type: rect
+          x: 0
+          y: 0
+          width: 934
+          height: 282
+          color: "rgba(0, 0, 0, 0.3)"
+          radius: 20
+
+        # User avatar
+        - type: circle_image
+          x: 30
+          y: 51
+          radius: 90
+          src: "${user.displayAvatarURL}"
+          border:
+            width: 5
+            color: "#5865F2"
+
+        # Username
+        - type: text
+          x: 250
+          y: 60
+          text: "${user.displayName}"
+          font: sans-serif
+          size: 36
+          color: "#FFFFFF"
+          align: left
+          baseline: top
+          max_width: 400
+
+        # Rank label and value
+        - type: text
+          x: 904
+          y: 35
+          text: "RANK"
+          font: sans-serif
+          size: 14
+          color: "#B9BBBE"
+          align: right
+          baseline: top
+
+        - type: text
+          x: 904
+          y: 55
+          text: "#${rank}"
+          font: sans-serif
+          size: 48
+          color: "#5865F2"
+          align: right
+          baseline: top
+
+        # Level label and value
+        - type: text
+          x: 754
+          y: 35
+          text: "LEVEL"
+          font: sans-serif
+          size: 14
+          color: "#B9BBBE"
+          align: right
+          baseline: top
+
+        - type: text
+          x: 754
+          y: 55
+          text: "${level}"
+          font: sans-serif
+          size: 48
+          color: "#FFFFFF"
+          align: right
+          baseline: top
+
+        # XP Progress bar background
+        - type: progress_bar
+          x: 250
+          y: 150
+          width: 654
+          height: 30
+          progress: "${xp / xpRequired}"
+          background: "#484b4e"
+          fill: "#5865F2"
+          radius: 15
+
+        # XP text
+        - type: text
+          x: 904
+          y: 195
+          text: "${xp} / ${xpRequired} XP"
+          font: sans-serif
+          size: 16
+          color: "#B9BBBE"
+          align: right
+          baseline: top
+
+    # ----------------------------------------
+    # Profile Card with Gradient Background
+    # ----------------------------------------
+    profile_card:
+      width: 600
+      height: 400
+      layers:
+        # Gradient background
+        - type: gradient
+          x: 0
+          y: 0
+          width: 600
+          height: 400
+          direction: diagonal
+          stops:
+            - offset: 0
+              color: "#667eea"
+            - offset: 1
+              color: "#764ba2"
+          radius: 20
+
+        # Semi-transparent overlay
+        - type: rect
+          x: 20
+          y: 20
+          width: 560
+          height: 360
+          color: "rgba(0, 0, 0, 0.4)"
+          radius: 15
+
+        # User avatar
+        - type: circle_image
+          x: 225
+          y: 50
+          radius: 75
+          src: "${user.displayAvatarURL}"
+          border:
+            width: 4
+            color: "#FFFFFF"
+
+        # Username
+        - type: text
+          x: 300
+          y: 220
+          text: "${user.displayName}"
+          font: sans-serif
+          size: 28
+          color: "#FFFFFF"
+          align: center
+          baseline: top
+
+        # Bio/description (conditional)
+        - type: text
+          x: 300
+          y: 260
+          text: "${bio || 'No bio set'}"
+          font: sans-serif
+          size: 16
+          color: "rgba(255, 255, 255, 0.8)"
+          align: center
+          baseline: top
+          max_width: 400
+          when: "${bio}"
+
+        # Stats row
+        - type: text
+          x: 150
+          y: 320
+          text: "${messageCount} msgs"
+          font: sans-serif
+          size: 14
+          color: "#FFFFFF"
+          align: center
+          baseline: top
+
+        - type: text
+          x: 300
+          y: 320
+          text: "Level ${level}"
+          font: sans-serif
+          size: 14
+          color: "#FFFFFF"
+          align: center
+          baseline: top
+
+        - type: text
+          x: 450
+          y: 320
+          text: "Joined ${joinDate}"
+          font: sans-serif
+          size: 14
+          color: "#FFFFFF"
+          align: center
+          baseline: top
+
+    # ----------------------------------------
+    # Server Stats Banner
+    # ----------------------------------------
+    server_stats:
+      width: 800
+      height: 200
+      background: "#2f3136"
+      layers:
+        # Server icon
+        - type: circle_image
+          x: 30
+          y: 30
+          radius: 70
+          src: "${guild.iconURL}"
+          border:
+            width: 3
+            color: "#5865F2"
+
+        # Server name
+        - type: text
+          x: 200
+          y: 40
+          text: "${guild.name}"
+          font: sans-serif
+          size: 32
+          color: "#FFFFFF"
+          align: left
+          baseline: top
+          max_width: 580
+
+        # Member count
+        - type: text
+          x: 200
+          y: 100
+          text: "${memberCount} Members"
+          font: sans-serif
+          size: 18
+          color: "#B9BBBE"
+          align: left
+          baseline: top
+
+        # Online count (green indicator)
+        - type: rect
+          x: 200
+          y: 140
+          width: 12
+          height: 12
+          color: "#43b581"
+          radius: 6
+
+        - type: text
+          x: 220
+          y: 137
+          text: "${onlineCount} Online"
+          font: sans-serif
+          size: 16
+          color: "#43b581"
+          align: left
+          baseline: top
+
+        # Channel count
+        - type: text
+          x: 400
+          y: 100
+          text: "${channelCount} Channels"
+          font: sans-serif
+          size: 18
+          color: "#B9BBBE"
+          align: left
+          baseline: top
+
+        # Role count
+        - type: text
+          x: 400
+          y: 137
+          text: "${roleCount} Roles"
+          font: sans-serif
+          size: 16
+          color: "#B9BBBE"
+          align: left
+          baseline: top
+
+# ============================================
+# STATE CONFIGURATION
+# ============================================
+# Store user XP, levels, and stats
+
+state:
+  storage:
+    type: memory
+  variables:
+    xp:
+      scope: member
+      type: number
+      default: 0
+    level:
+      scope: member
+      type: number
+      default: 1
+    message_count:
+      scope: member
+      type: number
+      default: 0
+    bio:
+      scope: member
+      type: string
+      default: ""
+
+# ============================================
+# COMMANDS
+# ============================================
+
+commands:
+  # Rank command - shows user's rank card
+  - name: rank
+    description: "View your rank card with XP and level"
+    options:
+      - name: user
+        type: user
+        description: "User to check (defaults to yourself)"
+        required: false
+    actions:
+      - defer: {}
+
+      # Get target user
+      - set:
+          key: target
+          scope: global
+          value: "${options.user || user}"
+
+      # Fetch user stats from state
+      - set:
+          key: userXp
+          scope: global
+          value: "${state.member.xp || 0}"
+      - set:
+          key: userLevel
+          scope: global
+          value: "${state.member.level || 1}"
+
+      # Calculate XP required for next level
+      - set:
+          key: xpRequired
+          scope: global
+          value: "${userLevel * 100}"
+
+      # Calculate rank (mock - in real bot, query leaderboard)
+      - set:
+          key: userRank
+          scope: global
+          value: "1"
+
+      # Render the rank card
+      - canvas_render:
+          generator: rank_card
+          context:
+            user: "${state.global.target}"
+            xp: "${state.global.userXp}"
+            level: "${state.global.userLevel}"
+            xpRequired: "${state.global.xpRequired}"
+            rank: "${state.global.userRank}"
+          as: rank_image
+
+      # Send the image
+      - reply:
+          files:
+            - attachment: "${rank_image}"
+              name: "rank.png"
+
+  # Profile command - shows detailed profile card
+  - name: profile
+    description: "View your profile card"
+    options:
+      - name: user
+        type: user
+        description: "User to view"
+        required: false
+    actions:
+      - defer: {}
+
+      - set:
+          key: target
+          scope: global
+          value: "${options.user || user}"
+
+      - canvas_render:
+          generator: profile_card
+          context:
+            user: "${state.global.target}"
+            bio: "${state.member.bio || ''}"
+            level: "${state.member.level || 1}"
+            messageCount: "${state.member.message_count || 0}"
+            joinDate: "${format(member.joinedAt, 'MMM yyyy')}"
+          as: profile_image
+
+      - reply:
+          files:
+            - attachment: "${profile_image}"
+              name: "profile.png"
+
+  # Set bio command
+  - name: setbio
+    description: "Set your profile bio"
+    options:
+      - name: bio
+        type: string
+        description: "Your bio (max 100 characters)"
+        required: true
+        max_length: 100
+    actions:
+      - set:
+          key: bio
+          scope: member
+          value: "${options.bio}"
+      - reply:
+          content: "Bio updated!"
+          ephemeral: true
+
+  # Server stats command
+  - name: serverstats
+    description: "View server statistics image"
+    actions:
+      - defer: {}
+
+      - canvas_render:
+          generator: server_stats
+          context:
+            guild: "${guild}"
+            memberCount: "${guild.memberCount}"
+            onlineCount: "${guild.presences.cache.filter(p => p.status !== 'offline').size}"
+            channelCount: "${guild.channels.cache.size}"
+            roleCount: "${guild.roles.cache.size}"
+          as: stats_image
+
+      - reply:
+          files:
+            - attachment: "${stats_image}"
+              name: "server-stats.png"
+
+# ============================================
+# EVENTS
+# ============================================
+
+events:
+  # Welcome new members with custom image
+  - event: member_join
+    actions:
+      - canvas_render:
+          generator: welcome_card
+          context:
+            user: "${member.user}"
+            guild: "${guild}"
+          as: welcome_image
+
+      - send_message:
+          channel: "${guild.systemChannelId}"
+          content: "Welcome to the server, ${member}!"
+          files:
+            - attachment: "${welcome_image}"
+              name: "welcome.png"
+
+  # Track messages for XP
+  - event: message_create
+    when: "!message.author.bot"
+    actions:
+      # Increment message count
+      - increment:
+          key: message_count
+          scope: member
+          by: 1
+
+      # Add XP (random 10-25)
+      - increment:
+          key: xp
+          scope: member
+          by: "${floor(random() * 15) + 10}"
+
+      # Check for level up
+      - set:
+          key: currentXp
+          scope: global
+          value: "${state.member.xp}"
+      - set:
+          key: currentLevel
+          scope: global
+          value: "${state.member.level || 1}"
+      - set:
+          key: xpNeeded
+          scope: global
+          value: "${currentLevel * 100}"
+
+      - flow_if:
+          condition: "${currentXp >= xpNeeded}"
+          then:
+            # Level up!
+            - increment:
+                key: level
+                scope: member
+                by: 1
+            - set:
+                key: xp
+                scope: member
+                value: "${currentXp - xpNeeded}"
+            - send_message:
+                channel: "${message.channelId}"
+                content: "Congratulations ${message.author}! You reached level ${currentLevel + 1}!"

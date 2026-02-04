@@ -244,6 +244,34 @@ const activeCode = () => {
   white-space: pre;
 }
 
+@media (max-width: 768px) {
+  .code-example {
+    padding: var(--sp-2xl) var(--sp-md);
+  }
+
+  .example-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+
+  .example-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .example-tab {
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: var(--sp-md) var(--sp-lg);
+  }
+
+  .code-content {
+    padding: var(--sp-md);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
+
 @media (max-width: 600px) {
   .example-tabs {
     flex-wrap: wrap;
@@ -253,6 +281,17 @@ const activeCode = () => {
     flex: 1;
     min-width: 50%;
     text-align: center;
+  }
+
+  .section-num {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 400px) {
+  .code-content {
+    font-size: 11px;
+    padding: var(--sp-sm);
   }
 }
 </style>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { inject, type Ref } from 'vue';
+
 interface Section {
   id: string;
   title: string;
@@ -10,14 +12,21 @@ interface Props {
   activeId: string;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'select', sectionId: string): void;
 }>();
 
+// Inject mobile sidebar state from BuilderLayout
+const mobileSidebarOpen = inject<Ref<boolean>>('mobileSidebarOpen');
+
 const handleSelect = (sectionId: string) => {
   emit('select', sectionId);
+  // Close mobile panel when selection is made
+  if (mobileSidebarOpen) {
+    mobileSidebarOpen.value = false;
+  }
 };
 </script>
 
@@ -104,5 +113,22 @@ const handleSelect = (sectionId: string) => {
   font-weight: 500;
   letter-spacing: 1px;
   text-transform: uppercase;
+}
+
+/* Mobile touch targets */
+@media (max-width: 900px) {
+  .nav-item {
+    padding: var(--sp-md) var(--sp-lg);
+    min-height: 48px;
+  }
+
+  .item-icon {
+    font-size: 14px;
+    width: 20px;
+  }
+
+  .item-title {
+    font-size: 12px;
+  }
 }
 </style>

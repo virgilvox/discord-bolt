@@ -8,8 +8,8 @@ const commands = computed(() => schemaStore.spec.commands || []);
 const events = computed(() => schemaStore.spec.events || []);
 const flows = computed(() => schemaStore.spec.flows || []);
 
-const identity = computed(() => schemaStore.spec.identity || {});
-const presence = computed(() => schemaStore.spec.presence);
+const identity = computed(() => schemaStore.spec.identity || {} as Record<string, unknown>);
+const presence = computed(() => schemaStore.spec.presence as Record<string, unknown> | undefined);
 
 const stateVars = computed(() => {
   const vars: Array<{ name: string; scope: string }> = [];
@@ -58,10 +58,10 @@ const pipes = computed(() => {
             <i class="fas fa-robot"></i>
           </div>
           <div class="bot-info">
-            <span class="bot-name">{{ identity.name || 'Unnamed Bot' }}</span>
+            <span class="bot-name">{{ (identity as Record<string, unknown>).name || 'Unnamed Bot' }}</span>
             <span v-if="presence" class="bot-status">
               <i class="fas fa-circle"></i>
-              {{ presence.activity?.name || 'No activity' }}
+              {{ ((presence as Record<string, unknown>)?.activity as Record<string, unknown>)?.text || 'No activity' }}
             </span>
           </div>
         </div>
@@ -97,7 +97,7 @@ const pipes = computed(() => {
         </div>
         <div v-else class="items-list">
           <div v-for="(event, idx) in events" :key="idx" class="item-row">
-            <span class="item-name">{{ event.on }}</span>
+            <span class="item-name">{{ event.event }}</span>
             <span class="item-meta">{{ event.actions?.length || 0 }} actions</span>
           </div>
         </div>

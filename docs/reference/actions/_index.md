@@ -129,7 +129,8 @@ FURLOW provides 84 actions across 9 categories.
 | [`cancel_timer`](#cancel_timer) | Cancel a timer |
 | [`counter_increment`](#counter_increment) | Increment a metric counter |
 | [`record_metric`](#record_metric) | Record a metric value |
-| [`canvas_render`](#canvas_render) | Render an image |
+| [`canvas_render`](#canvas_render) | Render image using named generator |
+| [`render_layers`](#render_layers) | Render image with inline layers |
 
 ---
 
@@ -1111,25 +1112,104 @@ Record a metric value.
 
 ### canvas_render
 
-Render an image.
+Render an image using a pre-defined generator from `spec.canvas.generators`.
 
 ```yaml
+# First define a generator in your spec
+canvas:
+  generators:
+    welcome_card:
+      width: 800
+      height: 300
+      background: "#23272A"
+      layers:
+        - type: circle_image
+          x: 320
+          y: 40
+          radius: 80
+          src: "${user.displayAvatarURL}"
+        - type: text
+          x: 400
+          y: 215
+          text: "Welcome, ${user.displayName}!"
+          font: sans-serif
+          size: 32
+          color: "#FFFFFF"
+          align: center
+
+# Then use it in actions
 - canvas_render:
+    generator: "welcome_card"    # Name of generator from spec.canvas.generators
+    context:                      # Variables to pass to the generator
+      user: "${member.user}"
+    as: "welcome_image"           # Store result in variable
+
+# Send the rendered image
+- reply:
+    files:
+      - attachment: "${welcome_image}"
+        name: "welcome.png"
+```
+
+### render_layers
+
+Render canvas layers inline without requiring a pre-defined generator. Useful for dynamic or one-off images.
+
+```yaml
+- render_layers:
     width: 800
     height: 400
-    elements:
+    background: "#1a1a2e"
+    layers:
       - type: rect
         x: 0
         y: 0
         width: 800
-        height: 400
-        fill: "#1a1a2e"
+        height: 4
+        color: "#5865F2"
+      - type: circle_image
+        x: 320
+        y: 40
+        radius: 80
+        src: "${user.displayAvatarURL}"
       - type: text
         x: 400
         y: 200
-        text: "Hello!"
-        font: "48px sans-serif"
-        fill: "#ffffff"
+        text: "Hello, ${user.displayName}!"
+        font: sans-serif
+        size: 32
+        color: "#FFFFFF"
         align: center
-    as: "image_buffer"
+      - type: progress_bar
+        x: 100
+        y: 350
+        width: 600
+        height: 30
+        progress: "${xp / maxXp}"
+        background: "#484b4e"
+        fill: "#5865F2"
+        radius: 15
+    format: png                   # Optional: png (default) or jpeg
+    quality: 0.9                  # Optional: JPEG quality (0-1)
+    as: "my_image"
+
+- reply:
+    files:
+      - attachment: "${my_image}"
+        name: "image.png"
 ```
+
+**Layer Types:**
+
+| Type | Description | Key Properties |
+|------|-------------|----------------|
+| `rect` | Rectangle | `width`, `height`, `color`, `radius` (rounded) |
+| `text` | Text | `text`, `font`, `size`, `color`, `align` |
+| `image` | Image | `src`, `width`, `height`, `opacity` |
+| `circle_image` | Circular image (avatars) | `src`/`url`, `radius`, `border` |
+| `progress_bar` | Progress bar | `progress` (0-1), `background`, `fill` |
+| `gradient` | Gradient fill | `direction`, `stops` |
+
+**Common Layer Properties:**
+- `x`, `y` - Position
+- `when` - Conditional expression (only render if true)

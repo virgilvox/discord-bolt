@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import type { DocsManifest, DocSection, DocPage } from '@/composables/useDocs';
+import { ref } from 'vue';
+import type { DocsManifest, DocPage } from '@/composables/useDocs';
 
 interface Props {
   manifest: DocsManifest;

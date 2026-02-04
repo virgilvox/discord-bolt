@@ -85,13 +85,38 @@ const stats = [
   }
 }
 
+@media (max-width: 768px) {
+  .stats {
+    padding: var(--sp-2xl) var(--sp-md);
+  }
+
+  .stat-card {
+    padding: var(--sp-lg);
+  }
+}
+
 @media (max-width: 500px) {
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-md);
   }
 
   .stat-value {
-    font-size: 36px;
+    font-size: 32px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  .stat-description {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

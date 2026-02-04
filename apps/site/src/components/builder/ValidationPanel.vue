@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useSchemaStore } from '@/stores/schema';
+import { validateFurlowSpec } from '@furlow/schema';
 
 const schemaStore = useSchemaStore();
 
@@ -18,29 +19,25 @@ const validate = async () => {
   errors.value = [];
 
   try {
-    // Basic validation rules
     const spec = schemaStore.spec;
     const newErrors: ValidationError[] = [];
 
-    // Check for required identity
-    if (!spec.identity?.name) {
-      newErrors.push({
-        path: 'identity.name',
-        message: 'Bot name is required',
-        severity: 'error',
-      });
+    // Run schema validation using @furlow/schema
+    const schemaResult = validateFurlowSpec(spec);
+    if (!schemaResult.valid) {
+      for (const err of schemaResult.errors) {
+        newErrors.push({
+          path: err.path || '/',
+          message: err.message,
+          severity: 'error',
+        });
+      }
     }
 
-    // Check commands
+    // Additional custom warnings (not schema violations, but best practices)
+    // Check commands for best practices
     if (spec.commands) {
       spec.commands.forEach((cmd, index) => {
-        if (!cmd.name) {
-          newErrors.push({
-            path: `commands[${index}].name`,
-            message: `Command at index ${index} is missing a name`,
-            severity: 'error',
-          });
-        }
         if (!cmd.description) {
           newErrors.push({
             path: `commands[${index}].description`,
@@ -58,36 +55,22 @@ const validate = async () => {
       });
     }
 
-    // Check events
+    // Check events for best practices
     if (spec.events) {
       spec.events.forEach((event, index) => {
-        if (!event.on) {
-          newErrors.push({
-            path: `events[${index}].on`,
-            message: `Event handler at index ${index} is missing event type`,
-            severity: 'error',
-          });
-        }
         if (!event.actions?.length) {
           newErrors.push({
             path: `events[${index}].actions`,
-            message: `Event handler "${event.on || index}" has no actions`,
+            message: `Event handler "${event.event || index}" has no actions`,
             severity: 'warning',
           });
         }
       });
     }
 
-    // Check flows
+    // Check flows for best practices
     if (spec.flows) {
       spec.flows.forEach((flow, index) => {
-        if (!flow.name) {
-          newErrors.push({
-            path: `flows[${index}].name`,
-            message: `Flow at index ${index} is missing a name`,
-            severity: 'error',
-          });
-        }
         if (!flow.actions?.length) {
           newErrors.push({
             path: `flows[${index}].actions`,
@@ -98,7 +81,14 @@ const validate = async () => {
       });
     }
 
-    errors.value = newErrors;
+    // Deduplicate errors (schema + custom might overlap)
+    const seen = new Set<string>();
+    errors.value = newErrors.filter((err) => {
+      const key = `${err.path}:${err.message}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } finally {
     isValidating.value = false;
   }

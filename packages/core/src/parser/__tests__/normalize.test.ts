@@ -175,11 +175,11 @@ describe('normalizeActionsDeep', () => {
       ]);
     });
 
-    it('should normalize try/catch/finally', () => {
+    it('should normalize try/catch/finally (TryAction uses do, not try)', () => {
       const actions = [
         {
           try: {
-            try: [{ send_message: { channel: '123', content: 'test' } }],
+            do: [{ send_message: { channel: '123', content: 'test' } }],
             catch: [{ log: { message: 'Error!' } }],
             finally: [{ log: { message: 'Done' } }],
           },
@@ -191,7 +191,7 @@ describe('normalizeActionsDeep', () => {
       expect(result).toEqual([
         {
           action: 'try',
-          try: [{ action: 'send_message', channel: '123', content: 'test' }],
+          do: [{ action: 'send_message', channel: '123', content: 'test' }],
           catch: [{ action: 'log', message: 'Error!' }],
           finally: [{ action: 'log', message: 'Done' }],
         },
@@ -219,6 +219,75 @@ describe('normalizeActionsDeep', () => {
             { action: 'send_dm', user: '123', content: 'DM' },
             { action: 'log', message: 'Sent' },
           ],
+        },
+      ]);
+    });
+
+    it('should normalize batch each with array', () => {
+      const actions = [
+        {
+          batch: {
+            items: '${items}',
+            each: [{ log: { message: 'Item: ${_}' } }],
+          },
+        },
+      ] as unknown as Action[];
+
+      const result = normalizeActionsDeep(actions);
+
+      expect(result).toEqual([
+        {
+          action: 'batch',
+          items: '${items}',
+          each: [{ action: 'log', message: 'Item: ${_}' }],
+        },
+      ]);
+    });
+
+    it('should normalize batch each with single action (wrap in array)', () => {
+      const actions = [
+        {
+          batch: {
+            items: '${items}',
+            each: { log: { message: 'Item: ${_}' } },
+          },
+        },
+      ] as unknown as Action[];
+
+      const result = normalizeActionsDeep(actions);
+
+      expect(result).toEqual([
+        {
+          action: 'batch',
+          items: '${items}',
+          each: [{ action: 'log', message: 'Item: ${_}' }],
+        },
+      ]);
+    });
+
+    it('should normalize flow_switch cases with single action (wrap in array)', () => {
+      const actions = [
+        {
+          flow_switch: {
+            value: 'type',
+            cases: {
+              a: { log: { message: 'Type A' } },
+              b: [{ log: { message: 'Type B' } }],
+            },
+          },
+        },
+      ] as unknown as Action[];
+
+      const result = normalizeActionsDeep(actions);
+
+      expect(result).toEqual([
+        {
+          action: 'flow_switch',
+          value: 'type',
+          cases: {
+            a: [{ action: 'log', message: 'Type A' }],
+            b: [{ action: 'log', message: 'Type B' }],
+          },
         },
       ]);
     });
@@ -536,6 +605,148 @@ describe('normalizeSpec', () => {
 
       expect(result.components!.modals!['feedback'].actions).toEqual([
         { action: 'send_message', channel: '123', content: '${fields.message}' },
+      ]);
+    });
+  });
+
+  describe('intents normalization', () => {
+    it('should normalize intents array to object format', () => {
+      const spec = {
+        intents: ['guilds', 'guild_members', 'guild_messages'],
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(result.intents).toEqual({
+        explicit: ['guilds', 'guild_members', 'guild_messages'],
+      });
+    });
+
+    it('should preserve intents object format', () => {
+      const spec: FurlowSpec = {
+        intents: { explicit: ['guilds'], auto: false },
+      };
+
+      const result = normalizeSpec(spec);
+
+      expect(result.intents).toEqual({ explicit: ['guilds'], auto: false });
+    });
+
+    it('should preserve intents with auto only', () => {
+      const spec: FurlowSpec = {
+        intents: { auto: true },
+      };
+
+      const result = normalizeSpec(spec);
+
+      expect(result.intents).toEqual({ auto: true });
+    });
+  });
+
+  describe('builtins normalization', () => {
+    it('should normalize builtins object to array format', () => {
+      const spec = {
+        builtins: {
+          moderation: { enabled: true, log_channel: '123' },
+          music: { enabled: true, dj_role: '456' },
+        },
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(Array.isArray(result.builtins)).toBe(true);
+      expect(result.builtins).toEqual([
+        { module: 'moderation', config: { enabled: true, log_channel: '123' } },
+        { module: 'music', config: { enabled: true, dj_role: '456' } },
+      ]);
+    });
+
+    it('should preserve builtins array format', () => {
+      const spec: FurlowSpec = {
+        builtins: [
+          { module: 'moderation', config: { enabled: true } },
+        ],
+      };
+
+      const result = normalizeSpec(spec);
+
+      expect(result.builtins).toEqual([
+        { module: 'moderation', config: { enabled: true } },
+      ]);
+    });
+
+    it('should handle builtins with null/undefined config', () => {
+      const spec = {
+        builtins: {
+          moderation: null,
+          music: undefined,
+        },
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(Array.isArray(result.builtins)).toBe(true);
+      expect(result.builtins).toEqual([
+        { module: 'moderation', config: {} },
+        { module: 'music', config: {} },
+      ]);
+    });
+  });
+
+  describe('flow parameters normalization', () => {
+    it('should normalize flow parameters from strings to objects', () => {
+      const spec = {
+        flows: {
+          log_command: {
+            parameters: ['command_name', 'user_id'],
+            actions: [{ log: { message: '${command_name}' } }],
+          },
+        },
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(result.flows![0].parameters).toEqual([
+        { name: 'command_name' },
+        { name: 'user_id' },
+      ]);
+    });
+
+    it('should preserve flow parameters object format', () => {
+      const spec = {
+        flows: {
+          log_command: {
+            parameters: [{ name: 'command_name', type: 'string' }],
+            actions: [{ log: { message: '${command_name}' } }],
+          },
+        },
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(result.flows![0].parameters).toEqual([
+        { name: 'command_name', type: 'string' },
+      ]);
+    });
+
+    it('should handle mixed parameter formats', () => {
+      const spec = {
+        flows: {
+          mixed: {
+            parameters: [
+              'simple_param',
+              { name: 'complex_param', type: 'number', required: true },
+            ],
+            actions: [{ log: { message: 'test' } }],
+          },
+        },
+      } as unknown as FurlowSpec;
+
+      const result = normalizeSpec(spec);
+
+      expect(result.flows![0].parameters).toEqual([
+        { name: 'simple_param' },
+        { name: 'complex_param', type: 'number', required: true },
       ]);
     });
   });

@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FURLOW - Page Not Found</title>
+  <title>FURLOW - Redirecting</title>
   <script>
     // SPA redirect for GitHub Pages
-    // Redirects all 404 pages to index.html with the path as a query param
-    const path = window.location.pathname;
-    const basePath = '/discord-furlow';
-    if (path.startsWith(basePath)) {
-      const route = path.slice(basePath.length);
-      window.location.replace(basePath + '/?redirect=' + encodeURIComponent(route));
-    }
+    // Store the path in sessionStorage and redirect to index.html
+    (function() {
+      const path = window.location.pathname;
+      const basePath = '/discord-furlow';
+      let route = path;
+      if (path.startsWith(basePath)) {
+        route = path.slice(basePath.length) || '/';
+      }
+      sessionStorage.setItem('spa-redirect', route + window.location.search + window.location.hash);
+      window.location.replace(basePath + '/');
+    })();
   </script>
 </head>
 <body>
-  <p>Redirecting...</p>
+  <noscript>Please enable JavaScript to use this site.</noscript>
 </body>
 </html>

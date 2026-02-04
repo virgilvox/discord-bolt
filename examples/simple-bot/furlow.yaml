@@ -181,7 +181,8 @@ events:
 flows:
   log_command:
     parameters:
-      - command_name
+      - name: command_name
+        type: string
     actions:
       - increment:
           scope: global

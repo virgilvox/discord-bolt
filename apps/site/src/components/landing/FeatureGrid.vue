@@ -191,9 +191,30 @@ const colorClasses: Record<string, string> = {
   }
 }
 
+@media (max-width: 768px) {
+  .features {
+    padding: var(--sp-2xl) var(--sp-md);
+  }
+
+  .feature-card {
+    padding: var(--sp-lg);
+  }
+}
+
 @media (max-width: 600px) {
   .features-grid {
     grid-template-columns: 1fr;
+    gap: var(--sp-md);
+  }
+
+  .section-num {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 400px) {
+  .feature-description {
+    font-size: 12px;
   }
 }
 </style>

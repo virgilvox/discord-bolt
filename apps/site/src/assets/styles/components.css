@@ -264,11 +264,14 @@
   color: var(--text-bright);
   background: var(--bg);
   border: var(--border-solid);
+  border-radius: 0;
   padding: var(--sp-sm) var(--sp-md);
   padding-right: var(--sp-xl);
   width: 100%;
   cursor: pointer;
   appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -277,12 +280,27 @@
 
 .select:hover {
   border-color: var(--border-mid);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ff6b35' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
 }
 
 .select:focus {
   outline: none;
   border-color: var(--accent);
   background-color: var(--bg-raised);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ff6b35' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+.select option {
+  background: var(--bg-panel);
+  color: var(--text-bright);
+  padding: var(--sp-sm);
+}
+
+.select option:hover,
+.select option:focus,
+.select option:checked {
+  background: var(--accent-glow);
+  color: var(--accent);
 }
 
 /* --- Checkbox & Radio --- */

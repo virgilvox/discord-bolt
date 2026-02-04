@@ -46,7 +46,7 @@ import FurlowButton from '@/components/common/FurlowButton.vue';
     <span class="yaml-key">description</span>: <span class="yaml-string">"Say hello"</span>
     <span class="yaml-key">actions</span>:
       - <span class="yaml-key">action</span>: <span class="yaml-action">reply</span>
-        <span class="yaml-key">content</span>: <span class="yaml-expr">"Hello, {{ user.name }}!"</span></code></pre>
+        <span class="yaml-key">content</span>: <span class="yaml-expr">"Hello, {<!-- -->{ user.name }}!"</span></code></pre>
         </div>
       </div>
     </div>
@@ -249,6 +249,50 @@ import FurlowButton from '@/components/common/FurlowButton.vue';
 
   .hero-visual {
     display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: var(--sp-xl) var(--sp-md);
+    min-height: auto;
+    padding-top: var(--sp-3xl);
+    padding-bottom: var(--sp-3xl);
+  }
+
+  .hero-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .hero-title {
+    font-size: 36px;
+    letter-spacing: 4px;
+  }
+
+  .hero-tagline {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .hero-description {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .hero-scroll-indicator {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-title {
+    font-size: 28px;
+    letter-spacing: 3px;
+  }
+
+  .hero-actions {
+    max-width: 100%;
   }
 }
 </style>
