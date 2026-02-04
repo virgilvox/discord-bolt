@@ -471,8 +471,42 @@ The `canvas_render` action now properly uses CanvasRenderer to render generators
 - 1,956 tests across 58 test files
 - 100% of packages have comprehensive test coverage
 
+## Recent Updates (2026-02-03)
+
+### Documentation Site (apps/site)
+
+#### GitHub Pages Deployment
+- **Workflow**: `.github/workflows/deploy-site.yml` deploys on push to main
+- **Custom Domain**: `furlow.dev` configured via `apps/site/public/CNAME`
+- **SPA Routing**: 404.html redirect handler for client-side routing
+- **Base Path**: Set to `/` for custom domain (was `/discord-furlow/` for GH Pages subdomain)
+
+#### LLM Reference Documentation
+The `docs/reference/llm-reference.md` provides a comprehensive reference for AI assistants to generate valid FURLOW YAML specs.
+
+**Added YAML Syntax Rules section** covering critical quoting rules:
+1. Always quote strings with special characters (`:`, `[`, `]`, `{`, `}`, `#`, `|`)
+2. ALL `${}` expressions must be quoted
+3. Escape quotes inside strings with backslash (`\"`)
+4. Use block scalars (`|` or `>`) for long/multi-line strings
+5. Arrays inside expressions need the whole expression quoted
+6. Quote strings that look like booleans/null (`yes`, `no`, `true`, `null`)
+
+**Fixed schema structures** to match actual FURLOW schema:
+| Field | Incorrect | Correct |
+|-------|-----------|---------|
+| `presence.activity` | `name: "..."` | `text: "..."` |
+| `permissions.levels` | Object `{0: "Everyone"}` | Array `[{name: "Everyone", level: 0}]` |
+| `components` | Array `[{custom_id: ...}]` | Object `{buttons: {}, selects: {}, modals: {}}` |
+| `pipes` | Array `[{name: "api"}]` | Object `{pipes: {api: {...}}}` |
+
+### Build Fixes
+- Fixed pnpm filter syntax in workflow: `pnpm --filter @furlow/schema build`
+- Removed `@types/canvas` from optionalDependencies (caused lockfile mismatch in CI)
+
 ## Resources
 
+- **Documentation Site**: https://furlow.dev
 - **npm**: https://www.npmjs.com/org/furlow
 - **Runtime Spec**: `RUNTIME_SPEC.md`
 - **Compliance Tests**: `specs/compliance/`
