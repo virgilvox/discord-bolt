@@ -263,7 +263,7 @@ events:
     debounce: 5s
     actions:
       - increment:
-          name: message_count
+          var: message_count
 ```
 
 ### throttle
@@ -335,7 +335,7 @@ events:
     condition: "${message.id == '123456789' && reaction.emoji.name == '✅'}"
     actions:
       - assign_role:
-          member: "${user.id}"
+          user: "${user.id}"
           role: "verified_role_id"
 ```
 

@@ -8,7 +8,7 @@ presence:
   status: online
   activity:
     type: watching
-    name: "new members"
+    text: "new members"
 
 # Canvas configuration for welcome cards
 canvas:

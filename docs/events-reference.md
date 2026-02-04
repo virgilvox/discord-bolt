@@ -92,7 +92,7 @@ events:
           channel: "welcome-channel-id"
           content: "Welcome ${member.mention} to ${guild.name}!"
       - assign_role:
-          member: "${member.id}"
+          user: "${member.id}"
           role: "member-role-id"
 ```
 
@@ -242,8 +242,8 @@ events:
     condition: "emoji.name == 'star' && !user.bot"
     actions:
       - increment:
+          var: "starboard:${message.id}"
           scope: guild
-          key: "starboard:${message.id}"
 ```
 
 ### `message_reaction_remove`
@@ -466,7 +466,7 @@ events:
     condition: "custom_id == 'accept_rules'"
     actions:
       - assign_role:
-          member: "${user.id}"
+          user: "${user.id}"
           role: "verified-role"
       - update_message:
           content: "Rules accepted!"
@@ -498,7 +498,7 @@ events:
           as: "role_id"
           each:
             - toggle_role:
-                member: "${user.id}"
+                user: "${user.id}"
                 role: "${role_id}"
 ```
 

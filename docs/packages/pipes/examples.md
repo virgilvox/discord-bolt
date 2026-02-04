@@ -19,12 +19,14 @@ pipes:
       - event: push
         when: "body.ref == 'refs/heads/main'"
         actions:
-          - flow: handle_deploy
+          - call_flow:
+              flow: handle_deploy
 
       - event: workflow_run
         when: "body.action == 'completed'"
         actions:
-          - flow: deploy_complete
+          - call_flow:
+              flow: deploy_complete
 
   deployments:
     type: database
@@ -35,16 +37,14 @@ flows:
   handle_deploy:
     actions:
       # Record deployment start
-      - pipe:
-          name: deployments
-          insert:
-            table: deploys
-            data:
-              commit: "${body.head_commit.id}"
-              author: "${body.head_commit.author.name}"
-              message: "${body.head_commit.message}"
-              status: "pending"
-              started_at: "${now()}"
+      - db_insert:
+          table: deploys
+          data:
+            commit: "${body.head_commit.id}"
+            author: "${body.head_commit.author.name}"
+            message: "${body.head_commit.message}"
+            status: "pending"
+            started_at: "${now()}"
           as: deploy_record
 
       # Notify channel
@@ -67,15 +67,13 @@ flows:
   deploy_complete:
     actions:
       # Update database
-      - pipe:
-          name: deployments
-          update:
-            table: deploys
-            where:
-              commit: "${body.workflow_run.head_sha}"
-            data:
-              status: "${body.workflow_run.conclusion}"
-              finished_at: "${now()}"
+      - db_update:
+          table: deploys
+          where:
+            commit: "${body.workflow_run.head_sha}"
+          data:
+            status: "${body.workflow_run.conclusion}"
+            finished_at: "${now()}"
 
       # Notify based on result
       - flow_if:
@@ -100,9 +98,10 @@ commands:
   - name: deploy-status
     description: Check recent deployments
     actions:
-      - pipe:
-          name: deployments
-          query: "SELECT * FROM deploys ORDER BY started_at DESC LIMIT 5"
+      - db_query:
+          table: deploys
+          order_by: "started_at DESC"
+          limit: 5
           as: recent
       - reply:
           embed:
@@ -145,7 +144,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "last_motion_${topic.split('/')[1]}"
+              var: "last_motion_${topic.split('/')[1]}"
               value: "${now()}"
           - flow_if:
               condition: "state.global.away_mode == true"
@@ -159,7 +158,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "door_${topic.split('/')[2]}"
+              var: "door_${topic.split('/')[2]}"
               value: "${payload.state}"
 
   sensors_db:
@@ -171,9 +170,10 @@ pipes:
         table: readings
         actions:
           # Keep only last 24 hours of data
-          - pipe:
-              name: sensors_db
-              query: "DELETE FROM readings WHERE timestamp < datetime('now', '-24 hours')"
+          - db_delete:
+              table: readings
+              where:
+                timestamp: "<datetime('now', '-24 hours')"
 
 state:
   global:
@@ -209,9 +209,9 @@ commands:
                         inline: true
 
             lights:
-              - pipe:
-                  name: mqtt
-                  publish:
+              - pipe_send:
+                  pipe: mqtt
+                  data:
                     topic: "home/${options.room}/light/set"
                     message: "${options.state}"
                     qos: 1
@@ -221,19 +221,14 @@ commands:
             away:
               - set:
                   scope: global
-                  key: "away_mode"
+                  var: "away_mode"
                   value: "${!state.global.away_mode}"
               - reply:
                   content: "Away mode ${state.global.away_mode ? 'enabled' : 'disabled'}"
 
             history:
-              - pipe:
-                  name: sensors_db
-                  query: |
-                    SELECT room, AVG(temperature) as avg_temp, MAX(temperature) as max_temp
-                    FROM readings
-                    WHERE timestamp > datetime('now', '-1 hour')
-                    GROUP BY room
+              - db_query:
+                  table: readings
                   as: stats
               - reply:
                   embed:
@@ -262,7 +257,8 @@ pipes:
       - event: message
         when: "data.type == 'price_update'"
         actions:
-          - flow: check_alerts
+          - call_flow:
+              flow: check_alerts
 
   alerts_db:
     type: database
@@ -273,13 +269,11 @@ flows:
   check_alerts:
     actions:
       # Get alerts for this symbol
-      - pipe:
-          name: alerts_db
-          query: |
-            SELECT * FROM price_alerts
-            WHERE symbol = ? AND triggered = 0
-          params:
-            - "${data.symbol}"
+      - db_query:
+          table: price_alerts
+          where:
+            symbol: "${data.symbol}"
+            triggered: 0
           as: alerts
 
       # Check each alert
@@ -293,16 +287,14 @@ flows:
                   (alert.direction == 'below' && data.price <= alert.target)
                 then:
                   # Mark as triggered
-                  - pipe:
-                      name: alerts_db
-                      update:
-                        table: price_alerts
-                        where:
-                          id: "${alert.id}"
-                        data:
-                          triggered: 1
-                          triggered_at: "${now()}"
-                          triggered_price: "${data.price}"
+                  - db_update:
+                      table: price_alerts
+                      where:
+                        id: "${alert.id}"
+                      data:
+                        triggered: 1
+                        triggered_at: "${now()}"
+                        triggered_price: "${data.price}"
 
                   # Notify user
                   - send_dm:
@@ -336,17 +328,15 @@ commands:
         type: number
         required: true
     actions:
-      - pipe:
-          name: alerts_db
-          insert:
-            table: price_alerts
-            data:
-              user_id: "${user.id}"
-              symbol: "${options.symbol | upper}"
-              direction: "${options.direction}"
-              target: "${options.price}"
-              triggered: 0
-              created_at: "${now()}"
+      - db_insert:
+          table: price_alerts
+          data:
+            user_id: "${user.id}"
+            symbol: "${options.symbol | upper}"
+            direction: "${options.direction}"
+            target: "${options.price}"
+            triggered: 0
+            created_at: "${now()}"
       - reply:
           content: "Alert set for ${options.symbol | upper} ${options.direction} $${options.price}"
           ephemeral: true
@@ -354,14 +344,12 @@ commands:
   - name: my-alerts
     description: View your price alerts
     actions:
-      - pipe:
-          name: alerts_db
-          query: |
-            SELECT * FROM price_alerts
-            WHERE user_id = ? AND triggered = 0
-            ORDER BY created_at DESC
-          params:
-            - "${user.id}"
+      - db_query:
+          table: price_alerts
+          where:
+            user_id: "${user.id}"
+            triggered: 0
+          order_by: "created_at DESC"
           as: alerts
       - reply:
           embed:
@@ -390,7 +378,8 @@ pipes:
     handlers:
       - event: change
         actions:
-          - flow: process_log_change
+          - call_flow:
+              flow: process_log_change
 
   errors_db:
     type: database
@@ -421,7 +410,7 @@ flows:
             # Extract error lines
             - set:
                 scope: local
-                key: "errors"
+                var: "errors"
                 value: "${new_lines.split('\\n').filter(l => l.includes('ERROR') || l.includes('FATAL'))}"
 
             # Store in database
@@ -429,19 +418,17 @@ flows:
                 items: "${errors}"
                 as: error_line
                 actions:
-                  - pipe:
-                      name: errors_db
-                      insert:
-                        table: errors
-                        data:
-                          file: "${path}"
-                          message: "${error_line}"
-                          timestamp: "${now()}"
+                  - db_insert:
+                      table: errors
+                      data:
+                        file: "${path}"
+                        message: "${error_line}"
+                        timestamp: "${now()}"
 
             # Increment counter
             - increment:
                 scope: global
-                key: "error_count_1h"
+                var: "error_count_1h"
                 by: "${errors.length}"
 
             # Alert if threshold exceeded
@@ -450,7 +437,7 @@ flows:
                 then:
                   - set:
                       scope: global
-                      key: "last_alert_time"
+                      var: "last_alert_time"
                       value: "${now()}"
 
                   - send_message:
@@ -467,8 +454,8 @@ flows:
                   - flow_if:
                       condition: "state.global.error_count_1h > 50"
                       then:
-                        - pipe:
-                            name: pagerduty
+                        - pipe_request:
+                            pipe: pagerduty
                             method: POST
                             path: "/enqueue"
                             body:
@@ -485,7 +472,7 @@ scheduler:
     actions:
       - set:
           scope: global
-          key: "error_count_1h"
+          var: "error_count_1h"
           value: 0
 
 commands:
@@ -496,11 +483,10 @@ commands:
         type: integer
         default: 10
     actions:
-      - pipe:
-          name: errors_db
-          query: "SELECT * FROM errors ORDER BY timestamp DESC LIMIT ?"
-          params:
-            - "${options.count}"
+      - db_query:
+          table: errors
+          order_by: "timestamp DESC"
+          limit: "${options.count}"
           as: errors
       - reply:
           embed:
@@ -531,9 +517,9 @@ pipes:
     handlers:
       - event: open
         actions:
-          - pipe:
-              name: external_chat
-              send:
+          - pipe_send:
+              pipe: external_chat
+              data:
                 type: "subscribe"
                 channels: ["general", "random", "dev"]
 
@@ -543,7 +529,7 @@ pipes:
           # Map external channel to Discord
           - set:
               scope: local
-              key: "discord_channel"
+              var: "discord_channel"
               value: "${state.global.channel_map[data.channel] ?? null}"
 
           - flow_if:
@@ -577,15 +563,15 @@ events:
       # Find external channel name
       - set:
           scope: local
-          key: "external_channel"
+          var: "external_channel"
           value: "${Object.entries(state.global.channel_map).find(([k,v]) => v == message.channel.id)?.[0]}"
 
       - flow_if:
           condition: "external_channel != null"
           then:
-            - pipe:
-                name: external_chat
-                send:
+            - pipe_send:
+                pipe: external_chat
+                data:
                   type: "chat_message"
                   channel: "${external_channel}"
                   user:
@@ -622,7 +608,7 @@ commands:
             link:
               - set_map:
                   scope: global
-                  key: "channel_map"
+                  var: "channel_map"
                   map_key: "${options.external}"
                   value: "${options.discord.id}"
               - reply:
@@ -631,7 +617,7 @@ commands:
             unlink:
               - delete_map:
                   scope: global
-                  key: "channel_map"
+                  var: "channel_map"
                   map_key: "${options.external}"
               - reply:
                   content: "Unlinked `${options.external}`"

@@ -233,7 +233,7 @@ commands:
   - name: test
     actions:
       - call_flow:
-          name: send_log
+          flow: send_log
           args:
             message: "Command executed"
 ```

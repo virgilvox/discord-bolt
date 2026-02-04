@@ -209,16 +209,16 @@ Manages member roles.
 
 ```yaml
 - assign_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"                  # Role ID
     reason: "Welcome role"             # Optional: Audit log reason
 
 - remove_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"
 
 - toggle_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"                  # Adds if missing, removes if present
 ```
 
@@ -228,7 +228,7 @@ Changes a member's nickname.
 
 ```yaml
 - set_nickname:
-    member: "${user.id}"
+    user: "${user.id}"
     nickname: "[VIP] ${user.username}"
     reason: "VIP status"
 ```
@@ -239,7 +239,7 @@ Kicks a member from the server.
 
 ```yaml
 - kick:
-    member: "${target.id}"
+    user: "${target.id}"
     reason: "Rule violation"
 ```
 
@@ -264,12 +264,12 @@ Times out a member (prevents sending messages).
 
 ```yaml
 - timeout:
-    member: "${target.id}"
+    user: "${target.id}"
     duration: "1h"                     # Duration string
     reason: "Spamming"
 
 - remove_timeout:
-    member: "${target.id}"
+    user: "${target.id}"
     reason: "Early release"
 ```
 
@@ -292,7 +292,7 @@ Moves a member to a different voice channel.
 
 ```yaml
 - move_member:
-    member: "${user.id}"
+    user: "${user.id}"
     channel: "voice-channel-id"        # Target voice channel
 ```
 
@@ -302,7 +302,7 @@ Disconnects a member from voice.
 
 ```yaml
 - disconnect_member:
-    member: "${user.id}"
+    user: "${user.id}"
     reason: "AFK timeout"
 ```
 
@@ -312,12 +312,12 @@ Server-wide mute or deafen in voice.
 
 ```yaml
 - server_mute:
-    member: "${user.id}"
-    mute: true                         # true to mute, false to unmute
+    user: "${user.id}"
+    muted: true                        # true to mute, false to unmute
 
 - server_deafen:
-    member: "${user.id}"
-    deafen: true
+    user: "${user.id}"
+    deafened: true
 ```
 
 ---
@@ -408,8 +408,7 @@ Sets permission overwrites for a channel.
 ```yaml
 - set_channel_permissions:
     channel: "${channel.id}"
-    target: "${role.id}"
-    type: role                         # role or member
+    role: "${role.id}"                 # Use 'role' or 'user'
     allow:
       - VIEW_CHANNEL
       - SEND_MESSAGES
@@ -554,13 +553,13 @@ Modifies numeric values.
 ```yaml
 - increment:
     scope: guild
-    key: "message_count"
-    amount: 1                          # Default: 1
+    var: "message_count"
+    by: 1                              # Default: 1
 
 - decrement:
     scope: user
-    key: "credits"
-    amount: 100
+    var: "credits"
+    by: 100
 ```
 
 ### `set_map` / `delete_map`
@@ -570,14 +569,14 @@ Manages map (object) values.
 ```yaml
 - set_map:
     scope: guild
-    key: "settings"
-    field: "prefix"
+    var: "settings"
+    map_key: "prefix"
     value: "!"
 
 - delete_map:
     scope: guild
-    key: "settings"
-    field: "deprecated_option"
+    var: "settings"
+    map_key: "deprecated_option"
 ```
 
 ### `list_push` / `list_remove`
@@ -713,7 +712,7 @@ Calls a reusable flow.
 
 ```yaml
 - call_flow:
-    name: "send_welcome"
+    flow: "send_welcome"
     args:
       user_id: "${user.id}"
       channel_id: "welcome-channel"
@@ -795,7 +794,7 @@ Error handling.
 
 ```yaml
 - try:
-    actions:
+    do:
       - send_dm:
           user: "${target.id}"
           content: "You have been warned"
@@ -830,7 +829,7 @@ Iterates over a collection.
     as: "target"
     each:
       - assign_role:
-          member: "${target.id}"
+          user: "${target.id}"
           role: "winner-role"
 ```
 
@@ -840,9 +839,9 @@ Repeats actions a number of times.
 
 ```yaml
 - repeat:
-    count: 5
+    times: 5
     as: "i"
-    actions:
+    do:
       - send_message:
           channel: "${channel.id}"
           content: "Message ${i + 1} of 5"
@@ -856,11 +855,11 @@ Loop while condition is true.
 
 ```yaml
 - flow_while:
-    condition: "${remaining > 0}"
+    while: "${remaining > 0}"
     max_iterations: 100                # Safety limit
-    actions:
+    do:
       - decrement:
-          key: "remaining"
+          var: "remaining"
       - send_message:
           channel: "${channel.id}"
           content: "${remaining} left"

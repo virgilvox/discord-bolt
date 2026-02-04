@@ -208,7 +208,7 @@ commands:
                     - set_map:
                         scope: guild
                         key: "playlists"
-                        field: "${options.name}"
+                        map_key: "${options.name}"
                         value: "${guild_state.queue}"
                     - reply:
                         content: "Saved queue as playlist **${options.name}**!"
@@ -236,7 +236,7 @@ commands:
               - delete_map:
                   scope: guild
                   key: "playlists"
-                  field: "${options.name}"
+                  map_key: "${options.name}"
               - reply:
                   content: "Deleted playlist **${options.name}**"
                   ephemeral: true

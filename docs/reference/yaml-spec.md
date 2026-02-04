@@ -252,7 +252,7 @@ context_menus:
     type: message
     actions:
       - call_flow:
-          name: translate_message
+          flow: translate_message
           args:
             message: "${target.content}"
 ```
@@ -339,7 +339,7 @@ commands:
           user: "${options.user.id}"
           reason: "${options.reason}"
       - call_flow:
-          name: log_moderation
+          flow: log_moderation
           args:
             action: Ban
             target: "${options.user.tag}"
@@ -387,8 +387,9 @@ components:
       - batch:
           items: "${interaction.values}"
           as: role
-          actions:
+          do:
             - toggle_role:
+                user: "${user.id}"
                 role: "${state.guild.roles[role]}"
 
   - custom_id: feedback_modal
@@ -557,7 +558,7 @@ scheduler:
       cron: "0 0 * * *"  # Every day at midnight
       actions:
         - call_flow:
-            name: backup_data
+            flow: backup_data
 
     - name: hourly_stats
       interval: 1h

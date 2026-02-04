@@ -42,7 +42,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "last_game_event"
+              var: "last_game_event"
               value: "${data}"
           - when: "data.includes('PLAYER_JOINED')"
             actions:
@@ -62,9 +62,10 @@ commands:
         type: string
         required: true
     actions:
-      - pipe:
-          name: game_server
-          send: "RCON ${options.command}\n"
+      - pipe_send:
+          pipe: game_server
+          data:
+            message: "RCON ${options.command}\n"
       - reply:
           content: "Command sent"
 ```
@@ -85,9 +86,10 @@ pipes:
         actions:
           - when: "data.trim() == 'STATUS'"
             actions:
-              - pipe:
-                  name: tcp_server
-                  send: "OK: ${guild.memberCount} members online"
+              - pipe_send:
+                  pipe: tcp_server
+                  data:
+                    message: "OK: ${guild.memberCount} members online"
 ```
 
 ### Request-Response Pattern
@@ -96,9 +98,10 @@ pipes:
 commands:
   - name: query-server
     actions:
-      - pipe:
-          name: game_server
-          request: "STATUS\n"
+      - pipe_send:
+          pipe: game_server
+          data:
+            message: "STATUS\n"
           timeout: "5s"
       - reply:
           content: "Server response: ${pipe_result.data}"
@@ -134,7 +137,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "discovered_${rinfo.address}"
+              var: "discovered_${rinfo.address}"
               value:
                 address: "${rinfo.address}"
                 port: "${rinfo.port}"
@@ -144,10 +147,11 @@ commands:
   - name: discover
     description: Discover local services
     actions:
-      - pipe:
-          name: discovery
-          broadcast:
-            data: "DISCOVER"
+      - pipe_send:
+          pipe: discovery
+          data:
+            broadcast: true
+            message: "DISCOVER"
             port: 5000
       - wait: "2s"
       - reply:
@@ -175,10 +179,11 @@ commands:
       - name: message
         type: string
     actions:
-      - pipe:
-          name: game_lobby
-          multicast:
-            data: "${options.message}"
+      - pipe_send:
+          pipe: game_lobby
+          data:
+            multicast: true
+            message: "${options.message}"
             port: 7788
 ```
 
@@ -198,12 +203,12 @@ commands:
       - name: port
         type: integer
     actions:
-      - pipe:
-          name: query
-          send:
+      - pipe_send:
+          pipe: query
+          data:
             host: "${options.ip}"
             port: "${options.port}"
-            data: "\xFF\xFF\xFF\xFFTSource Engine Query\x00"
+            message: "\xFF\xFF\xFF\xFFTSource Engine Query\x00"
           timeout: "5s"
       - reply:
           content: "Server info: ${pipe_result.data}"

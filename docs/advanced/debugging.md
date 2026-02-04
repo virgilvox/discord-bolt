@@ -132,7 +132,7 @@ Troubleshoot common issues and debug FURLOW bots effectively.
    ```yaml
    actions:
      - try:
-         actions:
+         do:
            - risky_action
          catch:
            - log:
@@ -400,7 +400,7 @@ flows:
 ```yaml
 actions:
   - try:
-      actions:
+      do:
         - pipe_request:
             pipe: external_api
             path: /data

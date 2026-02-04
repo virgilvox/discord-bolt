@@ -60,13 +60,15 @@ pipes:
       - event: change
         table: scores
         actions:
-          - pipe:
-              name: scores
-              query: "SELECT * FROM scores ORDER BY score DESC LIMIT 5"
+          - db_query:
+              table: scores
+              order_by: "score DESC"
+              limit: 5
+              as: top_five
           - set:
               scope: global
-              key: "top_scores"
-              value: "${pipe_result.data}"
+              var: "top_scores"
+              value: "${top_five}"
 
 commands:
   - name: score
@@ -79,14 +81,12 @@ commands:
         type: integer
         required: true
     actions:
-      - pipe:
-          name: scores
-          insert:
-            table: scores
-            data:
-              player: "${options.player}"
-              score: "${options.score}"
-              timestamp: "${now()}"
+      - db_insert:
+          table: scores
+          data:
+            player: "${options.player}"
+            score: "${options.score}"
+            timestamp: "${now()}"
       - reply:
           content: "Score recorded!"
 ```
@@ -107,14 +107,12 @@ commands:
       - name: value
         type: string
     actions:
-      - pipe:
-          name: prefs
-          insert:
-            table: user_prefs
-            data:
-              user_id: "${user.id}"
-              key: "${options.key}"
-              value: "${options.value}"
+      - db_insert:
+          table: user_prefs
+          data:
+            user_id: "${user.id}"
+            key: "${options.key}"
+            value: "${options.value}"
       - reply:
           content: "Preference saved"
 
@@ -123,14 +121,16 @@ commands:
       - name: key
         type: string
     actions:
-      - pipe:
-          name: prefs
-          query: "SELECT value FROM user_prefs WHERE user_id = ? AND key = ?"
-          params:
-            - "${user.id}"
-            - "${options.key}"
+      - db_query:
+          table: user_prefs
+          where:
+            user_id: "${user.id}"
+            key: "${options.key}"
+          select:
+            - value
+          as: pref_result
       - reply:
-          content: "${pipe_result.data[0]?.value ?? 'Not set'}"
+          content: "${pref_result[0]?.value ?? 'Not set'}"
 ```
 
 ### PostgreSQL Connection
@@ -152,15 +152,11 @@ pipes:
 commands:
   - name: stats
     actions:
-      - pipe:
-          name: db
-          query: |
-            SELECT
-              COUNT(*) as total,
-              COUNT(CASE WHEN created_at > NOW() - INTERVAL '24 hours' THEN 1 END) as today
-            FROM events
+      - db_query:
+          table: events
+          as: stats_result
       - reply:
-          content: "Total: ${pipe_result.data[0].total}, Today: ${pipe_result.data[0].today}"
+          content: "Total: ${stats_result.length}, Today: ${stats_result.filter(e => e.created_at > Date.now() - 86400000).length}"
 ```
 
 ### Upsert Pattern
@@ -172,16 +168,15 @@ commands:
       - name: bio
         type: string
     actions:
-      - pipe:
-          name: db
-          upsert:
-            table: profiles
-            where:
-              user_id: "${user.id}"
-            data:
-              user_id: "${user.id}"
-              bio: "${options.bio}"
-              updated_at: "${now()}"
+      - db_update:
+          table: profiles
+          where:
+            user_id: "${user.id}"
+          data:
+            user_id: "${user.id}"
+            bio: "${options.bio}"
+            updated_at: "${now()}"
+          upsert: true
       - reply:
           content: "Profile updated!"
 ```
@@ -197,13 +192,20 @@ commands:
       - name: amount
         type: integer
     actions:
-      - pipe:
-          name: db
-          transaction:
-            - query: "UPDATE wallets SET balance = balance - ? WHERE user_id = ?"
-              params: ["${options.amount}", "${user.id}"]
-            - query: "UPDATE wallets SET balance = balance + ? WHERE user_id = ?"
-              params: ["${options.amount}", "${options.to.id}"]
+      # Note: For transactions, use db_update actions in sequence
+      # The storage adapter handles atomicity when possible
+      - db_update:
+          table: wallets
+          where:
+            user_id: "${user.id}"
+          data:
+            balance: "${state.user.balance - options.amount}"
+      - db_update:
+          table: wallets
+          where:
+            user_id: "${options.to.id}"
+          data:
+            balance: "${state.user.balance + options.amount}"
       - reply:
           content: "Transferred ${options.amount} to ${options.to.username}"
 ```

@@ -353,7 +353,7 @@ events:
     condition: "custom_id == 'welcome_verify'"
     actions:
       - assign_role:
-          member: "${user.id}"
+          user: "${user.id}"
           role: "verified-role"
       - reply:
           content: "You've been verified! Welcome to the server."

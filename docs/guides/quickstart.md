@@ -155,7 +155,7 @@ commands:
     description: Show bot stats
     actions:
       - increment:
-          name: command_count
+          var: command_count
       - reply:
           content: "Commands used: ${command_count}"
 ```
@@ -202,7 +202,7 @@ commands:
           user: "${options.user.id}"
           content: "You have been warned in ${guild.name}."
       - call_flow:
-          name: log_action
+          flow: log_action
           args:
             action_name: "Warn"
             target: "${options.user.tag}"

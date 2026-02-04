@@ -8,7 +8,7 @@ presence:
   status: online
   activity:
     type: playing
-    name: "/help"
+    text: "/help"
 
 state:
   storage:
@@ -160,7 +160,7 @@ commands:
       - batch:
           items: "${poll_options.map((_, i) => emojis[i])}"
           as: emoji
-          actions:
+          do:
             - add_reaction:
                 message: "${poll_message.id}"
                 emoji: "${emoji}"
@@ -335,7 +335,7 @@ commands:
     actions:
       - set:
           var: result
-          value: "${eval(options.expression.replace(/[^0-9+\-*/().sqrt]/g, ''))}"
+          value: "${eval(options.expression.replace(/[^0-9+\\-*/().sqrt]/g, ''))}"
       - reply:
           content: "**${options.expression}** = **${result}**"
 

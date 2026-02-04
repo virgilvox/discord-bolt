@@ -244,21 +244,21 @@ flows:
 
       # assign_role
       - assign_role:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           role: "${config.testRoleId}"
           reason: "Compliance test"
           when: "false"
 
       # toggle_role
       - toggle_role:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           role: "${config.testRoleId}"
           reason: "Toggle test"
           when: "false"
 
       # remove_role
       - remove_role:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           role: "${config.testRoleId}"
           reason: "Cleanup test"
           when: "false"
@@ -275,13 +275,13 @@ flows:
 
       # kick
       - kick:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           reason: "Test kick"
           when: "false"
 
       # ban
       - ban:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           reason: "Test ban"
           deleteMessageDays: 1
           when: "false"
@@ -294,14 +294,14 @@ flows:
 
       # timeout
       - timeout:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           duration: "5m"
           reason: "Test timeout"
           when: "false"
 
       # remove_timeout
       - remove_timeout:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           reason: "Test remove timeout"
           when: "false"
 
@@ -323,32 +323,32 @@ flows:
 
       # set_nickname
       - set_nickname:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           nickname: "Test Nickname"
           reason: "Compliance test"
           when: "false"
 
       # move_member
       - move_member:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           channel: "${config.testChannelId}"
           when: "false"
 
       # disconnect_member
       - disconnect_member:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           when: "false"
 
       # server_mute
       - server_mute:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           muted: true
           reason: "Test mute"
           when: "false"
 
       # server_deafen
       - server_deafen:
-          member: "${config.testUserId}"
+          user: "${config.testUserId}"
           deafened: true
           reason: "Test deafen"
           when: "false"
@@ -738,7 +738,7 @@ flows:
     description: "Execute all standard compliance tests"
     actions:
       - set:
-          name: results
+          var: results
           value: {}
           scope: global
 
@@ -751,8 +751,8 @@ flows:
           flow: test_reply
           as: r1
       - set_map:
-          name: results
-          key: "reply"
+          var: results
+          map_key: "reply"
           value: "${r1}"
           scope: global
 
@@ -760,8 +760,8 @@ flows:
           flow: test_send_message
           as: r2
       - set_map:
-          name: results
-          key: "send_message"
+          var: results
+          map_key: "send_message"
           value: "${r2}"
           scope: global
 
@@ -769,8 +769,8 @@ flows:
           flow: test_edit_message
           as: r3
       - set_map:
-          name: results
-          key: "edit_message"
+          var: results
+          map_key: "edit_message"
           value: "${r3}"
           scope: global
 
@@ -778,8 +778,8 @@ flows:
           flow: test_delete_message
           as: r4
       - set_map:
-          name: results
-          key: "delete_message"
+          var: results
+          map_key: "delete_message"
           value: "${r4}"
           scope: global
 
@@ -787,8 +787,8 @@ flows:
           flow: test_defer
           as: r5
       - set_map:
-          name: results
-          key: "defer"
+          var: results
+          map_key: "defer"
           value: "${r5}"
           scope: global
 
@@ -796,8 +796,8 @@ flows:
           flow: test_update_message
           as: r6
       - set_map:
-          name: results
-          key: "update_message"
+          var: results
+          map_key: "update_message"
           value: "${r6}"
           scope: global
 
@@ -805,8 +805,8 @@ flows:
           flow: test_reactions
           as: r7
       - set_map:
-          name: results
-          key: "reactions"
+          var: results
+          map_key: "reactions"
           value: "${r7}"
           scope: global
 
@@ -814,8 +814,8 @@ flows:
           flow: test_bulk_delete
           as: r8
       - set_map:
-          name: results
-          key: "bulk_delete"
+          var: results
+          map_key: "bulk_delete"
           value: "${r8}"
           scope: global
 
@@ -824,8 +824,8 @@ flows:
           flow: test_role_actions
           as: r9
       - set_map:
-          name: results
-          key: "role_actions"
+          var: results
+          map_key: "role_actions"
           value: "${r9}"
           scope: global
 
@@ -833,8 +833,8 @@ flows:
           flow: test_moderation_actions
           as: r10
       - set_map:
-          name: results
-          key: "moderation_actions"
+          var: results
+          map_key: "moderation_actions"
           value: "${r10}"
           scope: global
 
@@ -842,8 +842,8 @@ flows:
           flow: test_member_actions
           as: r11
       - set_map:
-          name: results
-          key: "member_actions"
+          var: results
+          map_key: "member_actions"
           value: "${r11}"
           scope: global
 
@@ -852,8 +852,8 @@ flows:
           flow: test_channel_actions
           as: r12
       - set_map:
-          name: results
-          key: "channel_actions"
+          var: results
+          map_key: "channel_actions"
           value: "${r12}"
           scope: global
 
@@ -861,8 +861,8 @@ flows:
           flow: test_thread_actions
           as: r13
       - set_map:
-          name: results
-          key: "thread_actions"
+          var: results
+          map_key: "thread_actions"
           value: "${r13}"
           scope: global
 
@@ -870,8 +870,8 @@ flows:
           flow: test_permission_actions
           as: r14
       - set_map:
-          name: results
-          key: "permission_actions"
+          var: results
+          map_key: "permission_actions"
           value: "${r14}"
           scope: global
 
@@ -879,8 +879,8 @@ flows:
           flow: test_role_management_actions
           as: r15
       - set_map:
-          name: results
-          key: "role_management_actions"
+          var: results
+          map_key: "role_management_actions"
           value: "${r15}"
           scope: global
 
@@ -889,8 +889,8 @@ flows:
           flow: test_show_modal
           as: r16
       - set_map:
-          name: results
-          key: "show_modal"
+          var: results
+          map_key: "show_modal"
           value: "${r16}"
           scope: global
 
@@ -899,8 +899,8 @@ flows:
           flow: test_db_insert
           as: r17
       - set_map:
-          name: results
-          key: "db_insert"
+          var: results
+          map_key: "db_insert"
           value: "${r17}"
           scope: global
 
@@ -908,8 +908,8 @@ flows:
           flow: test_db_query
           as: r18
       - set_map:
-          name: results
-          key: "db_query"
+          var: results
+          map_key: "db_query"
           value: "${r18}"
           scope: global
 
@@ -917,8 +917,8 @@ flows:
           flow: test_db_update
           as: r19
       - set_map:
-          name: results
-          key: "db_update"
+          var: results
+          map_key: "db_update"
           value: "${r19}"
           scope: global
 
@@ -926,8 +926,8 @@ flows:
           flow: test_db_delete
           as: r20
       - set_map:
-          name: results
-          key: "db_delete"
+          var: results
+          map_key: "db_delete"
           value: "${r20}"
           scope: global
 
@@ -936,8 +936,8 @@ flows:
           flow: test_pipe_request
           as: r21
       - set_map:
-          name: results
-          key: "pipe_request"
+          var: results
+          map_key: "pipe_request"
           value: "${r21}"
           scope: global
 
@@ -945,8 +945,8 @@ flows:
           flow: test_pipe_send
           as: r22
       - set_map:
-          name: results
-          key: "pipe_send"
+          var: results
+          map_key: "pipe_send"
           value: "${r22}"
           scope: global
 
@@ -954,8 +954,8 @@ flows:
           flow: test_webhook_send
           as: r23
       - set_map:
-          name: results
-          key: "webhook_send"
+          var: results
+          map_key: "webhook_send"
           value: "${r23}"
           scope: global
 
@@ -963,26 +963,26 @@ flows:
           flow: test_timer_actions
           as: r24
       - set_map:
-          name: results
-          key: "timer_actions"
+          var: results
+          map_key: "timer_actions"
           value: "${r24}"
           scope: global
 
       # Calculate results
       - set:
-          name: passedCount
+          var: passedCount
           value: 0
           scope: global
 
       - batch:
           items: "${values(state.global.results)}"
           as: result
-          actions:
+          each:
             - flow_if:
                 if: "${result == true}"
                 then:
                   - increment:
-                      name: passedCount
+                      var: passedCount
                       by: 1
                       scope: global
 

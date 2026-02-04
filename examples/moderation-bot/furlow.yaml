@@ -136,7 +136,7 @@ commands:
         required: false
     actions:
       - timeout:
-          member: "${options.user.id}"
+          user: "${options.user.id}"
           duration: "${options.duration}"
           reason: "${options.reason ?? 'Quick mute by ' + user.username}"
       - reply:
@@ -237,7 +237,7 @@ events:
             channel: "${channel.id}"
             message: "${message.id}"
         - timeout:
-            member: "${user.id}"
+            user: "${user.id}"
             duration: "5m"
             reason: "Mass mention (auto-mod)"
         - send_message:
@@ -277,7 +277,7 @@ events:
                   ephemeral: true
             else:
               - call_flow:
-                  name: "warn_from_report"
+                  flow: "warn_from_report"
                   args:
                     user_id: "${replace(custom_id, 'report_warn_', '')}"
                     moderator: "${user}"

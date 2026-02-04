@@ -455,7 +455,7 @@ flows:
       # Multiple increments
       - repeat:
           times: 5
-          actions:
+          do:
             - counter_increment:
                 name: "test_iterations"
                 value: 1
@@ -606,7 +606,7 @@ flows:
     description: "Execute all full compliance tests"
     actions:
       - set:
-          name: results
+          var: results
           value: {}
           scope: global
 
@@ -623,8 +623,8 @@ flows:
           flow: test_voice_join
           as: v1
       - set_map:
-          name: results
-          key: "voice_join"
+          var: results
+          map_key: "voice_join"
           value: "${v1}"
           scope: global
 
@@ -632,8 +632,8 @@ flows:
           flow: test_voice_leave
           as: v2
       - set_map:
-          name: results
-          key: "voice_leave"
+          var: results
+          map_key: "voice_leave"
           value: "${v2}"
           scope: global
 
@@ -641,8 +641,8 @@ flows:
           flow: test_voice_playback
           as: v3
       - set_map:
-          name: results
-          key: "voice_playback"
+          var: results
+          map_key: "voice_playback"
           value: "${v3}"
           scope: global
 
@@ -650,8 +650,8 @@ flows:
           flow: test_voice_skip
           as: v4
       - set_map:
-          name: results
-          key: "voice_skip"
+          var: results
+          map_key: "voice_skip"
           value: "${v4}"
           scope: global
 
@@ -659,8 +659,8 @@ flows:
           flow: test_voice_seek
           as: v5
       - set_map:
-          name: results
-          key: "voice_seek"
+          var: results
+          map_key: "voice_seek"
           value: "${v5}"
           scope: global
 
@@ -668,8 +668,8 @@ flows:
           flow: test_voice_volume
           as: v6
       - set_map:
-          name: results
-          key: "voice_volume"
+          var: results
+          map_key: "voice_volume"
           value: "${v6}"
           scope: global
 
@@ -677,8 +677,8 @@ flows:
           flow: test_voice_filter
           as: v7
       - set_map:
-          name: results
-          key: "voice_filter"
+          var: results
+          map_key: "voice_filter"
           value: "${v7}"
           scope: global
 
@@ -686,8 +686,8 @@ flows:
           flow: test_voice_search
           as: v8
       - set_map:
-          name: results
-          key: "voice_search"
+          var: results
+          map_key: "voice_search"
           value: "${v8}"
           scope: global
 
@@ -695,8 +695,8 @@ flows:
           flow: test_queue_get
           as: v9
       - set_map:
-          name: results
-          key: "queue_get"
+          var: results
+          map_key: "queue_get"
           value: "${v9}"
           scope: global
 
@@ -704,8 +704,8 @@ flows:
           flow: test_queue_add
           as: v10
       - set_map:
-          name: results
-          key: "queue_add"
+          var: results
+          map_key: "queue_add"
           value: "${v10}"
           scope: global
 
@@ -713,8 +713,8 @@ flows:
           flow: test_queue_remove
           as: v11
       - set_map:
-          name: results
-          key: "queue_remove"
+          var: results
+          map_key: "queue_remove"
           value: "${v11}"
           scope: global
 
@@ -722,8 +722,8 @@ flows:
           flow: test_queue_clear
           as: v12
       - set_map:
-          name: results
-          key: "queue_clear"
+          var: results
+          map_key: "queue_clear"
           value: "${v12}"
           scope: global
 
@@ -731,8 +731,8 @@ flows:
           flow: test_queue_shuffle
           as: v13
       - set_map:
-          name: results
-          key: "queue_shuffle"
+          var: results
+          map_key: "queue_shuffle"
           value: "${v13}"
           scope: global
 
@@ -740,8 +740,8 @@ flows:
           flow: test_queue_loop
           as: v14
       - set_map:
-          name: results
-          key: "queue_loop"
+          var: results
+          map_key: "queue_loop"
           value: "${v14}"
           scope: global
 
@@ -754,8 +754,8 @@ flows:
           flow: test_canvas_render
           as: c1
       - set_map:
-          name: results
-          key: "canvas_render"
+          var: results
+          map_key: "canvas_render"
           value: "${c1}"
           scope: global
 
@@ -768,8 +768,8 @@ flows:
           flow: test_counter_increment
           as: m1
       - set_map:
-          name: results
-          key: "counter_increment"
+          var: results
+          map_key: "counter_increment"
           value: "${m1}"
           scope: global
 
@@ -777,8 +777,8 @@ flows:
           flow: test_record_metric
           as: m2
       - set_map:
-          name: results
-          key: "record_metric"
+          var: results
+          map_key: "record_metric"
           value: "${m2}"
           scope: global
 
@@ -791,26 +791,26 @@ flows:
           flow: test_voice_workflow
           as: i1
       - set_map:
-          name: results
-          key: "voice_workflow"
+          var: results
+          map_key: "voice_workflow"
           value: "${i1}"
           scope: global
 
       # Calculate results
       - set:
-          name: passedCount
+          var: passedCount
           value: 0
           scope: global
 
       - batch:
           items: "${values(state.global.results)}"
           as: result
-          actions:
+          each:
             - flow_if:
                 if: "${result == true}"
                 then:
                   - increment:
-                      name: passedCount
+                      var: passedCount
                       by: 1
                       scope: global
 

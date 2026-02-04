@@ -346,7 +346,7 @@ flows:
 Call flows with:
 ```yaml
 - call_flow:
-    name: log_action
+    flow: log_action
     args:
       action: "Ban"
       target: "${user.tag}"
@@ -470,46 +470,45 @@ voice:
 
 ```yaml
 pipes:
-  pipes:
-    api:
-      type: http
-      base_url: "https://api.example.com"
-      auth:
-        type: bearer
-        token: "${env.API_TOKEN}"
-      timeout: "30s"
-      retry:
-        attempts: 3
-        delay: "1s"
+  api:
+    type: http
+    base_url: "https://api.example.com"
+    auth:
+      type: bearer
+      token: "${env.API_TOKEN}"
+    timeout: "30s"
+    retry:
+      attempts: 3
+      delay: "1s"
 
-    events:
-      type: websocket
-      url: "wss://events.example.com"
-      reconnect:
-        enabled: true
-        delay: "5s"
-        max_attempts: 10
-      handlers:
-        - event: "message"
-          actions:
-            - log:
-                message: "Received: ${data}"
+  events:
+    type: websocket
+    url: "wss://events.example.com"
+    reconnect:
+      enabled: true
+      delay: "5s"
+      max_attempts: 10
+    handlers:
+      - event: "message"
+        actions:
+          - log:
+              message: "Received: ${data}"
 
-    incoming:
-      type: webhook
-      path: "/webhook/github"
-      method: POST
-      verification:
-        type: hmac
-        secret: "${env.WEBHOOK_SECRET}"
-        header: "X-Hub-Signature-256"
-        algorithm: sha256
-      handlers:
-        - event: "push"
-          actions:
-            - send_message:
-                channel: "${state.guild.dev_channel}"
-                content: "New push to ${payload.repository.name}"
+  incoming:
+    type: webhook
+    path: "/webhook/github"
+    method: POST
+    verification:
+      type: hmac
+      secret: "${env.WEBHOOK_SECRET}"
+      header: "X-Hub-Signature-256"
+      algorithm: sha256
+    handlers:
+      - event: "push"
+        actions:
+          - send_message:
+              channel: "${state.guild.dev_channel}"
+              content: "New push to ${payload.repository.name}"
 ```
 
 ### Automod
@@ -538,7 +537,7 @@ scheduler:
       cron: "0 0 * * *"
       actions:
         - call_flow:
-            name: backup_data
+            flow: backup_data
 ```
 
 ### Canvas
@@ -579,7 +578,7 @@ imports:
 
 ---
 
-## Actions Reference (84 Actions)
+## Actions Reference (85 Actions)
 
 ### Message Actions (11)
 
@@ -677,23 +676,23 @@ imports:
 ```yaml
 # assign_role
 - assign_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"
     reason: "Role assigned"
 
 # remove_role
 - remove_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"
 
 # toggle_role
 - toggle_role:
-    member: "${user.id}"
+    user: "${user.id}"
     role: "123456789"
 
 # kick
 - kick:
-    member: "${user.id}"
+    user: "${user.id}"
     reason: "Violation"
 
 # ban
@@ -709,13 +708,13 @@ imports:
 
 # timeout
 - timeout:
-    member: "${user.id}"
+    user: "${user.id}"
     duration: "1h"
     reason: "Cool down"
 
 # remove_timeout
 - remove_timeout:
-    member: "${user.id}"
+    user: "${user.id}"
 
 # send_dm
 - send_dm:
@@ -724,27 +723,27 @@ imports:
 
 # set_nickname
 - set_nickname:
-    member: "${user.id}"
+    user: "${user.id}"
     nickname: "New Nick"
 
 # move_member
 - move_member:
-    member: "${user.id}"
+    user: "${user.id}"
     channel: "${voiceChannel.id}"
 
 # disconnect_member
 - disconnect_member:
-    member: "${user.id}"
+    user: "${user.id}"
 
 # server_mute
 - server_mute:
-    member: "${user.id}"
-    mute: true
+    user: "${user.id}"
+    muted: true
 
 # server_deafen
 - server_deafen:
-    member: "${user.id}"
-    deafen: true
+    user: "${user.id}"
+    deafened: true
 ```
 
 ### State Actions (7)
@@ -762,44 +761,44 @@ imports:
 ```yaml
 # set
 - set:
-    name: "counter"
+    var: "counter"
     value: 42
     scope: guild
 
 # increment
 - increment:
-    name: "counter"
+    var: "counter"
     by: 1
     scope: global
 
 # decrement
 - decrement:
-    name: "counter"
+    var: "counter"
     by: 1
 
 # list_push
 - list_push:
-    name: "warnings"
+    var: "warnings"
     value: "${user.id}"
     scope: guild
 
 # list_remove
 - list_remove:
-    name: "warnings"
+    var: "warnings"
     value: "${user.id}"
 
 # set_map
 - set_map:
-    name: "user_data"
-    key: "${user.id}"
+    var: "user_data"
+    map_key: "${user.id}"
     value:
       level: 5
       xp: 1000
 
 # delete_map
 - delete_map:
-    name: "user_data"
-    key: "${user.id}"
+    var: "user_data"
+    map_key: "${user.id}"
 ```
 
 ### Flow Actions (13)
@@ -823,7 +822,7 @@ imports:
 ```yaml
 # call_flow
 - call_flow:
-    name: "send_log"
+    flow: "send_log"
     args:
       message: "Hello"
 
@@ -861,16 +860,16 @@ imports:
 
 # flow_while
 - flow_while:
-    condition: "${i < 10}"
-    actions:
+    while: "${i < 10}"
+    do:
       - increment:
-          name: "i"
+          var: "i"
 
 # repeat
 - repeat:
     times: 5
     as: "i"
-    actions:
+    do:
       - log:
           message: "Iteration ${i}"
 
@@ -888,15 +887,15 @@ imports:
 - batch:
     items: "${users}"
     as: "u"
-    actions:
+    each:
       - send_dm:
           user: "${u.id}"
           content: "Message"
-    delay: "1s"
+    concurrency: 1
 
 # try
 - try:
-    actions:
+    do:
       - send_dm:
           user: "${user.id}"
           content: "Hello"
@@ -956,11 +955,10 @@ imports:
 
 # create_thread
 - create_thread:
-    channel: "${channel.id}"
-    message: "${message.id}"
     name: "Thread Name"
-    auto_archive_duration: 1440
-    as: "created_thread"
+    message: "${message.id}"  # optional - create from message
+    auto_archive_duration: 1440  # 60 | 1440 | 4320 | 10080
+    type: public  # public | private
 
 # archive_thread
 - archive_thread:
@@ -970,8 +968,7 @@ imports:
 # set_channel_permissions
 - set_channel_permissions:
     channel: "${channel.id}"
-    target: "${role.id}"
-    type: role  # role | member
+    role: "${role.id}"  # use 'role' OR 'user' for member
     allow:
       - view_channel
       - send_messages
@@ -1002,17 +999,24 @@ imports:
 ### Component Actions (1)
 
 ```yaml
-# show_modal
+# show_modal - reference a pre-defined modal
 - show_modal:
-    title: "Feedback Form"
-    custom_id: "feedback_modal"
-    components:
-      - type: text_input
-        custom_id: "feedback"
-        label: "Your feedback"
-        style: paragraph
-        required: true
-        placeholder: "Enter feedback..."
+    modal: "feedback_modal"
+
+# show_modal - inline modal definition
+- show_modal:
+    modal:
+      custom_id: "feedback_modal"
+      title: "Feedback Form"
+      components:
+        - type: action_row
+          components:
+            - type: text_input
+              custom_id: "feedback"
+              label: "Your feedback"
+              style: paragraph
+              required: true
+              placeholder: "Enter feedback..."
 ```
 
 ### Voice Actions (17)
@@ -1042,6 +1046,7 @@ imports:
 - voice_join:
     channel: "${voiceChannel.id}"
     self_deaf: true
+    self_mute: false
 
 # voice_leave
 - voice_leave:
@@ -1049,22 +1054,20 @@ imports:
 
 # voice_play
 - voice_play:
-    guild: "${guild.id}"
     source: "https://youtube.com/watch?v=..."
+    volume: 50
+    seek: "0s"
 
 # voice_volume
 - voice_volume:
-    guild: "${guild.id}"
-    level: 50  # 0-100
+    volume: 50  # or use 'level: 50'
 
 # voice_seek
 - voice_seek:
-    guild: "${guild.id}"
     position: "1m30s"
 
 # voice_set_filter
 - voice_set_filter:
-    guild: "${guild.id}"
     filter: bassboost  # bassboost | nightcore | vaporwave | karaoke | tremolo | vibrato | reverse | treble | surrounding | earrape
     enabled: true
 
@@ -1077,13 +1080,12 @@ imports:
 
 # queue_add
 - queue_add:
-    guild: "${guild.id}"
-    url: "https://..."
-    position: 0
+    source: "https://youtube.com/watch?v=..."  # or use 'track:' from voice_search
+    requester: "${user.id}"
+    position: next  # number | 'next' | 'last'
 
 # queue_loop
 - queue_loop:
-    guild: "${guild.id}"
     mode: queue  # off | track | queue
 ```
 
@@ -1126,9 +1128,10 @@ imports:
 ### Integration Actions (8)
 
 ```yaml
-# pipe_request
+# pipe_request (uses a named pipe from pipes config)
 - pipe_request:
-    url: "https://api.example.com/data"
+    pipe: "api"
+    path: "/data"
     method: GET
     headers:
       Authorization: "Bearer ${token}"
@@ -1152,15 +1155,16 @@ imports:
 
 # create_timer
 - create_timer:
-    name: "reminder"
+    id: "reminder"
     duration: "1h"
+    event: "timer_fire"
     data:
       user_id: "${user.id}"
       message: "Reminder!"
 
 # cancel_timer
 - cancel_timer:
-    name: "reminder"
+    id: "reminder"
 
 # counter_increment
 - counter_increment:
@@ -1542,11 +1546,11 @@ events:
           cases:
             "check":
               - assign_role:
-                  member: "${user.id}"
+                  user: "${user.id}"
                   role: "verified_role_id"
             "red_circle":
               - assign_role:
-                  member: "${user.id}"
+                  user: "${user.id}"
                   role: "red_team_role_id"
 ```
 
@@ -1593,7 +1597,7 @@ commands:
           user: "${options.user.id}"
           reason: "${options.reason}"
       - call_flow:
-          name: log_mod_action
+          flow: log_mod_action
           args:
             action: Ban
             target: "${options.user.tag}"
@@ -1640,14 +1644,14 @@ events:
     throttle: 1m
     actions:
       - increment:
-          name: "xp"
+          var: "xp"
           by: "${random(15, 25)}"
           scope: member
       - flow_if:
-          condition: "${state.member.xp >= state.member.level * 100}"
+          if: "${state.member.xp >= state.member.level * 100}"
           then:
             - increment:
-                name: "level"
+                var: "level"
                 by: 1
                 scope: member
             - send_message:
@@ -1666,9 +1670,11 @@ identity:
   name: "${env.BOT_NAME}"
 
 pipes:
-  - name: api
-    url: "${env.API_URL}"
+  api:
+    type: http
+    base_url: "${env.API_URL}"
     auth:
+      type: bearer
       token: "${env.API_TOKEN}"
 ```
 

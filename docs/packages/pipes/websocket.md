@@ -88,9 +88,9 @@ For WebSocket servers that use request-response:
 commands:
   - name: query
     actions:
-      - pipe:
-          name: chat_server
-          send:
+      - pipe_send:
+          pipe: chat_server
+          data:
             type: "query"
             id: "${random_id()}"
             query: "${options.query}"
@@ -106,9 +106,9 @@ commands:
 commands:
   - name: broadcast
     actions:
-      - pipe:
-          name: chat_server
-          send:
+      - pipe_send:
+          pipe: chat_server
+          data:
             type: "broadcast"
             message: "${options.message}"
             from: "${user.username}"
@@ -125,9 +125,9 @@ pipes:
       - event: open
         actions:
           - log: "WebSocket connected"
-          - pipe:
-              name: realtime
-              send:
+          - pipe_send:
+              pipe: realtime
+              data:
                 type: "auth"
                 token: "${env.WS_TOKEN}"
 

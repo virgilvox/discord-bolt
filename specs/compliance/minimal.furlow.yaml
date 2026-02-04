@@ -55,19 +55,19 @@ flows:
     actions:
       # Test set
       - set:
-          name: counter
+          var: counter
           value: 10
           scope: global
 
       # Test increment
       - increment:
-          name: counter
+          var: counter
           by: 5
           scope: global
 
       # Test decrement
       - decrement:
-          name: counter
+          var: counter
           by: 3
           scope: global
 
@@ -87,23 +87,23 @@ flows:
     actions:
       # Clear list first
       - set:
-          name: testList
+          var: testList
           value: []
           scope: global
 
       # Push items
       - list_push:
-          name: testList
+          var: testList
           value: "item1"
           scope: global
 
       - list_push:
-          name: testList
+          var: testList
           value: "item2"
           scope: global
 
       - list_push:
-          name: testList
+          var: testList
           value: "item3"
           scope: global
 
@@ -114,7 +114,7 @@ flows:
 
       # Remove middle item
       - list_remove:
-          name: testList
+          var: testList
           value: "item2"
           scope: global
 
@@ -130,33 +130,33 @@ flows:
     actions:
       # Clear map first
       - set:
-          name: testMap
+          var: testMap
           value: {}
           scope: global
 
       # Set map keys
       - set_map:
-          name: testMap
-          key: "name"
+          var: testMap
+          map_key: "name"
           value: "Test Bot"
           scope: global
 
       - set_map:
-          name: testMap
-          key: "version"
+          var: testMap
+          map_key: "version"
           value: "1.0.0"
           scope: global
 
       - set_map:
-          name: testMap
-          key: "temp"
+          var: testMap
+          map_key: "temp"
           value: "to-delete"
           scope: global
 
       # Delete one key
       - delete_map:
-          name: testMap
-          key: "temp"
+          var: testMap
+          map_key: "temp"
           scope: global
 
       # Map should have 2 keys
@@ -174,7 +174,7 @@ flows:
     description: "Test conditional branching"
     actions:
       - set:
-          name: result
+          var: result
           value: ""
           scope: global
 
@@ -182,12 +182,12 @@ flows:
           if: "${args.value > 50}"
           then:
             - set:
-                name: result
+                var: result
                 value: "high"
                 scope: global
           else:
             - set:
-                name: result
+                var: result
                 value: "low"
                 scope: global
 
@@ -205,7 +205,7 @@ flows:
     description: "Test switch/case branching"
     actions:
       - set:
-          name: message
+          var: message
           value: ""
           scope: global
 
@@ -215,24 +215,24 @@ flows:
             - match: "active"
               actions:
                 - set:
-                    name: message
+                    var: message
                     value: "User is active"
                     scope: global
             - match: "idle"
               actions:
                 - set:
-                    name: message
+                    var: message
                     value: "User is idle"
                     scope: global
             - match: "offline"
               actions:
                 - set:
-                    name: message
+                    var: message
                     value: "User is offline"
                     scope: global
           default:
             - set:
-                name: message
+                var: message
                 value: "Unknown status"
                 scope: global
 
@@ -246,24 +246,24 @@ flows:
     description: "Test while loop"
     actions:
       - set:
-          name: counter
+          var: counter
           value: 0
           scope: global
 
       - set:
-          name: sum
+          var: sum
           value: 0
           scope: global
 
       - flow_while:
           while: "${state.global.counter < 5}"
-          actions:
+          do:
             - increment:
-                name: counter
+                var: counter
                 by: 1
                 scope: global
             - set:
-                name: sum
+                var: sum
                 value: "${state.global.sum + state.global.counter}"
                 scope: global
 
@@ -278,16 +278,16 @@ flows:
     description: "Test repeat loop with counter"
     actions:
       - set:
-          name: items
+          var: items
           value: []
           scope: global
 
       - repeat:
           times: 5
           as: i
-          actions:
+          do:
             - list_push:
-                name: items
+                var: items
                 value: "item_${i}"
                 scope: global
 
@@ -302,22 +302,22 @@ flows:
     description: "Test parallel action execution"
     actions:
       - set:
-          name: parallelResults
+          var: parallelResults
           value: []
           scope: global
 
       - parallel:
           actions:
             - list_push:
-                name: parallelResults
+                var: parallelResults
                 value: "task1"
                 scope: global
             - list_push:
-                name: parallelResults
+                var: parallelResults
                 value: "task2"
                 scope: global
             - list_push:
-                name: parallelResults
+                var: parallelResults
                 value: "task3"
                 scope: global
 
@@ -332,16 +332,16 @@ flows:
     description: "Test batch processing"
     actions:
       - set:
-          name: processed
+          var: processed
           value: []
           scope: global
 
       - batch:
           items: "${range(1, 4)}"
           as: num
-          actions:
+          each:
             - list_push:
-                name: processed
+                var: processed
                 value: "${num * 2}"
                 scope: global
 
@@ -360,12 +360,12 @@ flows:
     description: "Test error handling"
     actions:
       - set:
-          name: tryResult
+          var: tryResult
           value: ""
           scope: global
 
       - try:
-          actions:
+          do:
             - flow_if:
                 if: "${args.shouldFail}"
                 then:
@@ -373,12 +373,12 @@ flows:
                       reason: "Intentional failure"
                 else:
                   - set:
-                      name: tryResult
+                      var: tryResult
                       value: "success"
                       scope: global
           catch:
             - set:
-                name: tryResult
+                var: tryResult
                 value: "caught"
                 scope: global
           finally:
@@ -433,7 +433,7 @@ flows:
     description: "Test wait/delay"
     actions:
       - set:
-          name: startTime
+          var: startTime
           value: "${timestamp()}"
           scope: global
 
@@ -441,7 +441,7 @@ flows:
           duration: "100ms"
 
       - set:
-          name: elapsed
+          var: elapsed
           value: "${timestamp() - state.global.startTime}"
           scope: global
 
@@ -537,7 +537,7 @@ flows:
     actions:
       # Set same variable name in different scopes
       - set:
-          name: testValue
+          var: testValue
           value: "global"
           scope: global
 
@@ -557,43 +557,43 @@ flows:
     actions:
       # Math functions
       - set:
-          name: mathResult
+          var: mathResult
           value: "${round(abs(-3.7), 0) == 4 && max(1, 2, 3) == 3 && min(1, 2, 3) == 1}"
           scope: global
 
       # String functions
       - set:
-          name: stringResult
+          var: stringResult
           value: "${lower('HELLO') == 'hello' && upper('hello') == 'HELLO' && trim('  hi  ') == 'hi'}"
           scope: global
 
       # Array functions
       - set:
-          name: arrayResult
+          var: arrayResult
           value: "${length([1,2,3]) == 3 && first([1,2,3]) == 1 && last([1,2,3]) == 3}"
           scope: global
 
       # Object functions
       - set:
-          name: objectResult
+          var: objectResult
           value: "${length(keys({a:1,b:2})) == 2 && has({a:1}, 'a') == true}"
           scope: global
 
       # Type functions
       - set:
-          name: typeResult
+          var: typeResult
           value: "${isArray([]) && isString('') && isNumber(42) && isBoolean(true)}"
           scope: global
 
       # Conversion functions
       - set:
-          name: conversionResult
+          var: conversionResult
           value: "${string(42) == '42' && number('42') == 42 && int(3.7) == 3}"
           scope: global
 
       # Utility functions
       - set:
-          name: utilityResult
+          var: utilityResult
           value: "${default(null, 'fallback') == 'fallback' && coalesce(null, null, 'found') == 'found'}"
           scope: global
 
@@ -608,19 +608,19 @@ flows:
     actions:
       # String transforms
       - set:
-          name: stringTransform
+          var: stringTransform
           value: "${'  HELLO WORLD  ' | trim | lower}"
           scope: global
 
       # Array transforms
       - set:
-          name: arrayTransform
+          var: arrayTransform
           value: "${[3, 1, 2] | sort | first}"
           scope: global
 
       # Chain transforms
       - set:
-          name: chainTransform
+          var: chainTransform
           value: "${[1, 2, 3, 4, 5] | slice(1, 4) | reverse | join(',')}"
           scope: global
 
@@ -634,25 +634,25 @@ flows:
     description: "Test 'when' property on actions"
     actions:
       - set:
-          name: executed
+          var: executed
           value: false
           scope: global
 
       # This should NOT execute
       - set:
-          name: executed
+          var: executed
           value: true
           scope: global
           when: "false"
 
       - set:
-          name: firstCheck
+          var: firstCheck
           value: "${state.global.executed == false}"
           scope: global
 
       # This SHOULD execute
       - set:
-          name: executed
+          var: executed
           value: true
           scope: global
           when: "true"
@@ -667,7 +667,7 @@ flows:
     description: "Execute all minimal compliance tests"
     actions:
       - set:
-          name: results
+          var: results
           value: {}
           scope: global
 
@@ -680,8 +680,8 @@ flows:
           flow: test_state_operations
           as: test1
       - set_map:
-          name: results
-          key: "state_operations"
+          var: results
+          map_key: "state_operations"
           value: "${test1}"
           scope: global
 
@@ -690,8 +690,8 @@ flows:
           flow: test_list_operations
           as: test2
       - set_map:
-          name: results
-          key: "list_operations"
+          var: results
+          map_key: "list_operations"
           value: "${test2}"
           scope: global
 
@@ -700,8 +700,8 @@ flows:
           flow: test_map_operations
           as: test3
       - set_map:
-          name: results
-          key: "map_operations"
+          var: results
+          map_key: "map_operations"
           value: "${test3}"
           scope: global
 
@@ -717,8 +717,8 @@ flows:
             value: 25
           as: test4low
       - set_map:
-          name: results
-          key: "flow_if"
+          var: results
+          map_key: "flow_if"
           value: "${test4high == 'high' && test4low == 'low'}"
           scope: global
 
@@ -729,8 +729,8 @@ flows:
             status: "active"
           as: test5
       - set_map:
-          name: results
-          key: "flow_switch"
+          var: results
+          map_key: "flow_switch"
           value: "${test5 == 'User is active'}"
           scope: global
 
@@ -739,8 +739,8 @@ flows:
           flow: test_flow_while
           as: test6
       - set_map:
-          name: results
-          key: "flow_while"
+          var: results
+          map_key: "flow_while"
           value: "${test6}"
           scope: global
 
@@ -749,8 +749,8 @@ flows:
           flow: test_repeat
           as: test7
       - set_map:
-          name: results
-          key: "repeat"
+          var: results
+          map_key: "repeat"
           value: "${test7}"
           scope: global
 
@@ -759,8 +759,8 @@ flows:
           flow: test_parallel
           as: test8
       - set_map:
-          name: results
-          key: "parallel"
+          var: results
+          map_key: "parallel"
           value: "${test8}"
           scope: global
 
@@ -769,8 +769,8 @@ flows:
           flow: test_batch
           as: test9
       - set_map:
-          name: results
-          key: "batch"
+          var: results
+          map_key: "batch"
           value: "${test9}"
           scope: global
 
@@ -786,8 +786,8 @@ flows:
             shouldFail: true
           as: test10fail
       - set_map:
-          name: results
-          key: "try_catch"
+          var: results
+          map_key: "try_catch"
           value: "${test10success == 'success' && test10fail == 'caught'}"
           scope: global
 
@@ -796,8 +796,8 @@ flows:
           flow: test_nested_flows
           as: test11
       - set_map:
-          name: results
-          key: "nested_flows"
+          var: results
+          map_key: "nested_flows"
           value: "${test11}"
           scope: global
 
@@ -806,8 +806,8 @@ flows:
           flow: test_wait
           as: test12
       - set_map:
-          name: results
-          key: "wait"
+          var: results
+          map_key: "wait"
           value: "${test12}"
           scope: global
 
@@ -816,8 +816,8 @@ flows:
           flow: test_log
           as: test13
       - set_map:
-          name: results
-          key: "log"
+          var: results
+          map_key: "log"
           value: "${test13}"
           scope: global
 
@@ -826,22 +826,22 @@ flows:
           flow: test_emit
           as: test14
       - set_map:
-          name: results
-          key: "emit"
+          var: results
+          map_key: "emit"
           value: "${test14}"
           scope: global
 
       # Test 15: Abort (via try/catch to capture)
       - try:
-          actions:
+          do:
             - call_flow:
                 flow: test_abort
                 args:
                   shouldAbort: true
           catch:
             - set_map:
-                name: results
-                key: "abort"
+                var: results
+                map_key: "abort"
                 value: true
                 scope: global
 
@@ -850,8 +850,8 @@ flows:
           flow: test_return
           as: test16
       - set_map:
-          name: results
-          key: "return"
+          var: results
+          map_key: "return"
           value: "${test16.status == 'success' && test16.count == 42}"
           scope: global
 
@@ -860,8 +860,8 @@ flows:
           flow: test_scope_isolation
           as: test17
       - set_map:
-          name: results
-          key: "scope_isolation"
+          var: results
+          map_key: "scope_isolation"
           value: "${test17}"
           scope: global
 
@@ -870,8 +870,8 @@ flows:
           flow: test_expression_functions
           as: test18
       - set_map:
-          name: results
-          key: "expression_functions"
+          var: results
+          map_key: "expression_functions"
           value: "${test18}"
           scope: global
 
@@ -880,8 +880,8 @@ flows:
           flow: test_expression_transforms
           as: test19
       - set_map:
-          name: results
-          key: "expression_transforms"
+          var: results
+          map_key: "expression_transforms"
           value: "${test19}"
           scope: global
 
@@ -890,36 +890,36 @@ flows:
           flow: test_conditional_when
           as: test20
       - set_map:
-          name: results
-          key: "conditional_when"
+          var: results
+          map_key: "conditional_when"
           value: "${test20}"
           scope: global
 
       # Calculate pass/fail
       - set:
-          name: allPassed
+          var: allPassed
           value: true
           scope: global
 
       - set:
-          name: passedCount
+          var: passedCount
           value: 0
           scope: global
 
       - batch:
           items: "${values(state.global.results)}"
           as: result
-          actions:
+          each:
             - flow_if:
                 if: "${result == true}"
                 then:
                   - increment:
-                      name: passedCount
+                      var: passedCount
                       by: 1
                       scope: global
                 else:
                   - set:
-                      name: allPassed
+                      var: allPassed
                       value: false
                       scope: global
 

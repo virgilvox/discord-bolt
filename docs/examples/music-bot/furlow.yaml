@@ -8,7 +8,7 @@ presence:
   status: online
   activity:
     type: listening
-    name: "/play"
+    text: "/play"
 
 voice:
   enabled: true
@@ -79,7 +79,7 @@ commands:
         required: true
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - voice_join:
           channel: "${member.voice.channelId}"
       - voice_search:
@@ -134,8 +134,8 @@ commands:
     description: Pause playback
     actions:
       - call_flow:
-          name: check_voice
-      - voice_pause
+          flow: check_voice
+      - voice_pause: {}
       - reply:
           content: "Paused playback"
           ephemeral: true
@@ -144,8 +144,8 @@ commands:
     description: Resume playback
     actions:
       - call_flow:
-          name: check_voice
-      - voice_resume
+          flow: check_voice
+      - voice_resume: {}
       - reply:
           content: "Resumed playback"
           ephemeral: true
@@ -154,12 +154,12 @@ commands:
     description: Stop playback and leave
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - call_flow:
-          name: check_dj
-      - voice_stop
-      - queue_clear
-      - voice_leave
+          flow: check_dj
+      - voice_stop: {}
+      - queue_clear: {}
+      - voice_leave: {}
       - reply:
           content: "Stopped playback and left the channel"
           ephemeral: true
@@ -168,7 +168,7 @@ commands:
     description: Skip current track
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - flow_if:
           condition: "${!player.playing}"
           then:
@@ -179,7 +179,7 @@ commands:
       - set:
           var: skipped_track
           value: "${player.current}"
-      - voice_skip
+      - voice_skip: {}
       - reply:
           content: "Skipped: **${skipped_track.title}**"
 
@@ -235,9 +235,9 @@ commands:
         max_value: 100
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - call_flow:
-          name: check_dj
+          flow: check_dj
       - voice_volume:
           volume: "${options.level}"
       - reply:
@@ -248,10 +248,10 @@ commands:
     description: Shuffle the queue
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - call_flow:
-          name: check_dj
-      - queue_shuffle
+          flow: check_dj
+      - queue_shuffle: {}
       - reply:
           content: "Shuffled the queue"
 
@@ -271,7 +271,7 @@ commands:
             value: "queue"
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - queue_loop:
           mode: "${options.mode}"
       - set:
@@ -291,7 +291,7 @@ commands:
         min_value: 1
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - queue_get:
           as: current_queue
       - flow_if:
@@ -313,10 +313,10 @@ commands:
     description: Clear the queue
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - call_flow:
-          name: check_dj
-      - queue_clear
+          flow: check_dj
+      - queue_clear: {}
       - reply:
           content: "Cleared the queue"
 
@@ -329,7 +329,7 @@ commands:
         required: true
     actions:
       - call_flow:
-          name: check_voice
+          flow: check_voice
       - voice_seek:
           position: "${options.position}"
       - reply:

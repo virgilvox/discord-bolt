@@ -125,7 +125,7 @@ state:
 actions:
   - batch:
       items: "${users}"
-      actions:
+      each:
         - db_insert:
             table: users
             data: "${item}"
@@ -226,7 +226,7 @@ events:
 # Good: Independent actions run in parallel
 actions:
   - parallel:
-      actions:
+      do:
         - send_message:
             channel: "${channel1}"
             content: "Message 1"

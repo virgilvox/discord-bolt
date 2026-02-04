@@ -8,7 +8,7 @@ presence:
   status: online
   activity:
     type: watching
-    name: "for reactions"
+    text: "for reactions"
 
 state:
   storage:
@@ -150,7 +150,7 @@ commands:
               }
             })}
       - call_flow:
-          name: create_role_buttons
+          flow: create_role_buttons
           args:
             roles: "${updated_roles}"
           as: buttons
@@ -257,26 +257,28 @@ commands:
 
 # Components (button handlers)
 components:
-  - custom_id: "role_*"
-    type: button
-    actions:
-      - set:
-          var: role_id
-          value: "${interaction.customId.replace('role_', '')}"
-      - flow_if:
-          condition: "${member.roles.cache.has(role_id)}"
-          then:
-            - remove_role:
-                role: "${role_id}"
-            - reply:
-                content: "Removed <@&${role_id}>"
-                ephemeral: true
-          else:
-            - assign_role:
-                role: "${role_id}"
-            - reply:
-                content: "Added <@&${role_id}>"
-                ephemeral: true
+  buttons:
+    role_toggle:
+      type: button
+      custom_id: "role_*"
+      actions:
+        - set:
+            var: role_id
+            value: "${interaction.customId.replace('role_', '')}"
+        - flow_if:
+            condition: "${member.roles.cache.has(role_id)}"
+            then:
+              - remove_role:
+                  role: "${role_id}"
+              - reply:
+                  content: "Removed <@&${role_id}>"
+                  ephemeral: true
+            else:
+              - assign_role:
+                  role: "${role_id}"
+              - reply:
+                  content: "Added <@&${role_id}>"
+                  ephemeral: true
 
 # Events (reaction handlers)
 events:

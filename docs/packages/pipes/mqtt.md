@@ -86,7 +86,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "sensor_${topic.replace(/\\//g, '_')}"
+              var: "sensor_${topic.replace(/\\//g, '_')}"
               value: "${payload}"
 ```
 
@@ -100,9 +100,9 @@ commands:
         type: integer
         required: true
     actions:
-      - pipe:
-          name: sensors
-          publish:
+      - pipe_send:
+          pipe: sensors
+          data:
             topic: "commands/thermostat/set"
             message:
               target: "${options.temp}"
@@ -141,9 +141,9 @@ commands:
         type: string
         choices: ["on", "off"]
     actions:
-      - pipe:
-          name: home
-          publish:
+      - pipe_send:
+          pipe: home
+          data:
             topic: "home/${options.room}/light/set"
             message: "${options.state | upper}"
             qos: 1
@@ -161,7 +161,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "device_${topic.split('/')[1]}"
+              var: "device_${topic.split('/')[1]}"
               value:
                 status: "${payload.status}"
                 last_seen: "${now()}"

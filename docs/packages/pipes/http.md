@@ -119,8 +119,8 @@ commands:
         type: string
         required: true
     actions:
-      - pipe:
-          name: weather_api
+      - pipe_request:
+          pipe: weather_api
           method: GET
           path: "/current"
           params:
@@ -156,8 +156,8 @@ commands:
       - name: body
         type: string
     actions:
-      - pipe:
-          name: github_api
+      - pipe_request:
+          pipe: github_api
           method: POST
           path: "/repos/myorg/myrepo/issues"
           body:
@@ -173,8 +173,8 @@ commands:
 commands:
   - name: update-issue
     actions:
-      - pipe:
-          name: github_api
+      - pipe_request:
+          pipe: github_api
           method: PATCH
           path: "/repos/myorg/myrepo/issues/${options.number}"
           body:
@@ -182,8 +182,8 @@ commands:
 
   - name: delete-comment
     actions:
-      - pipe:
-          name: github_api
+      - pipe_request:
+          pipe: github_api
           method: DELETE
           path: "/repos/myorg/myrepo/issues/comments/${options.id}"
 ```
@@ -194,8 +194,8 @@ commands:
 commands:
   - name: fetch-user
     actions:
-      - pipe:
-          name: api
+      - pipe_request:
+          pipe: api
           method: GET
           path: "/users/${options.id}"
           as: user_data  # Store result in variable

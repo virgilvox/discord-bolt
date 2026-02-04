@@ -190,7 +190,7 @@ State is accessed in expressions using scoped notation:
 ```yaml
 # Set state with scope
 - set:
-    name: counter
+    var: counter
     value: 10
     scope: global
 
@@ -240,7 +240,7 @@ commands:
 
 | Block | Purpose |
 |-------|---------|
-| **Actions** | Atomic operations (84 total) |
+| **Actions** | Atomic operations (85 total) |
 | **Flows** | Reusable action sequences |
 | **State** | Persistent data across 5 scopes |
 | **Events** | Reactive handlers for Discord events |
@@ -268,7 +268,7 @@ furlow/
 │   ├── schema/                   # TypeScript types & JSON schemas
 │   │   └── src/types/
 │   │       ├── spec.ts           # FurlowSpec top-level
-│   │       ├── actions.ts        # 84 action types
+│   │       ├── actions.ts        # 85 action types
 │   │       ├── events.ts         # Event types
 │   │       └── ...
 │   ├── storage/                  # Database adapters
@@ -283,7 +283,7 @@ furlow/
 │   │   │   └── resolver.ts       # Import path resolution
 │   │   ├── expression/           # Jexl evaluator + 69 functions + caching
 │   │   ├── actions/
-│   │   │   ├── handlers/         # 84 action handlers
+│   │   │   ├── handlers/         # 85 action handlers
 │   │   │   ├── registry.ts       # Action registration
 │   │   │   └── executor.ts       # Action execution
 │   │   ├── events/               # EventRouter with normalization
@@ -313,7 +313,7 @@ furlow/
 │   └── compliance/               # Runtime compliance tests
 │       ├── minimal.furlow.yaml   # 20 actions
 │       ├── standard.furlow.yaml  # 63 actions
-│       └── full.furlow.yaml      # 84 actions
+│       └── full.furlow.yaml      # 85 actions
 ├── RUNTIME_SPEC.md               # Language-agnostic runtime spec
 └── HANDOFF.md                    # This file
 ```
@@ -324,11 +324,11 @@ The `RUNTIME_SPEC.md` document (2,346 lines) defines the complete FURLOW runtime
 
 | Section | Description |
 |---------|-------------|
-| **Compliance Levels** | Minimal (20), Standard (63), Full (84) action tiers |
+| **Compliance Levels** | Minimal (20), Standard (63), Full (85) action tiers |
 | **YAML Format** | Top-level schema, version rules, action normalization |
 | **Expression Language** | 69 functions, 48 transforms, interpolation syntax |
 | **State Management** | 5 scope levels (global, guild, channel, user, member) |
-| **Action System** | Complete reference for all 84 actions with schemas |
+| **Action System** | Complete reference for all 85 actions with schemas |
 | **Event System** | Discord gateway events + FURLOW high-level events |
 | **Flow System** | Flow definitions, parameters, control flow semantics |
 
@@ -348,7 +348,7 @@ Load YAML → Resolve Imports → Resolve Env Vars → NORMALIZE → Validate Sc
 |------|---------|---------|
 | `minimal.furlow.yaml` | 20 | State + Flow control only |
 | `standard.furlow.yaml` | 63 | + Message, Member, Channel, Component, Database, Pipes |
-| `full.furlow.yaml` | 84 | + Voice, Canvas, Metrics |
+| `full.furlow.yaml` | 85 | + Voice, Canvas, Metrics |
 
 ## Development Commands
 

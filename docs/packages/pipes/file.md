@@ -49,7 +49,8 @@ pipes:
       - event: change
         actions:
           - log: "Config changed: ${path}"
-          - flow: reload_config
+          - call_flow:
+              flow: reload_config
           - send_message:
               channel: "bot-logs"
               content: "Configuration reloaded from ${path}"
@@ -126,7 +127,8 @@ pipes:
               command: "npm run build"
           - when: "shell_result.exitCode == 0"
             actions:
-              - flow: reload_modules
+              - call_flow:
+                  flow: reload_modules
               - send_message:
                   channel: "dev-logs"
                   content: "Rebuilt successfully"
@@ -152,7 +154,7 @@ pipes:
         actions:
           - set:
               scope: global
-              key: "last_backup"
+              var: "last_backup"
               value:
                 path: "${path}"
                 size: "${stats.size}"

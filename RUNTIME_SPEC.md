@@ -52,8 +52,8 @@ FURLOW defines three compliance levels to accommodate different use cases:
 | Level | Actions | Use Case |
 |-------|---------|----------|
 | **Minimal** | 20 | Testing, embedding, simple automation |
-| **Standard** | 63 | Most production bots (no voice/canvas) |
-| **Full** | 84 | Feature-complete implementation |
+| **Standard** | 64 | Most production bots (no voice/canvas) |
+| **Full** | 85 | Feature-complete implementation |
 
 A runtime MUST declare which compliance level it implements.
 
@@ -107,7 +107,7 @@ state:
 # OPTIONAL: Reusable flows
 flows:
   - name: greet_user
-    params:
+    parameters:
       - name: user
         type: object
         required: true
@@ -143,7 +143,7 @@ selects:
   - customId: "role_select"
     actions:
       - assign_role:
-          member: "${event.member}"
+          user: "${event.member}"
           role: "${event.values[0]}"
 
 # OPTIONAL: Modal handlers
@@ -171,15 +171,15 @@ automod:
           timeWindow: "10s"
     actions:
       - timeout:
-          member: "${event.member}"
+          user: "${event.member}"
           duration: "5m"
           reason: "Spam detected"
 
-# OPTIONAL: External pipe definitions
+# OPTIONAL: External pipe definitions (flat map, not array)
 pipes:
-  - name: api
+  api:
     type: http
-    baseUrl: "https://api.example.com"
+    base_url: "https://api.example.com"
     headers:
       Authorization: "Bearer ${env.API_TOKEN}"
 
@@ -265,10 +265,10 @@ function normalizeAction(action):
 Control flow actions (`flow_if`, `flow_switch`, `flow_while`, `repeat`, `parallel`, `batch`, `try`) contain nested action arrays. Runtimes MUST recursively normalize these:
 - `then`, `else` (flow_if)
 - `cases`, `default` (flow_switch)
-- `do` (flow_while, repeat)
+- `do` (flow_while, repeat, try)
 - `actions` (parallel)
-- `template` (batch)
-- `try`, `catch`, `finally` (try)
+- `each` (batch)
+- `catch`, `finally` (try)
 
 **Idempotency requirement:**
 Normalization MUST be idempotent. Calling normalize on already-normalized actions MUST produce identical output. This allows safe double-normalization without side effects.
@@ -808,7 +808,7 @@ function executeAction(action, context):
 
 ### 5.3 Action Categories
 
-FURLOW defines 84 actions in 9 categories:
+FURLOW defines 85 actions in 9 categories:
 
 | Category | Count | Description |
 |----------|-------|-------------|
@@ -820,7 +820,7 @@ FURLOW defines 84 actions in 9 categories:
 | Database | 4 | Table CRUD operations |
 | Voice | 17 | Audio playback and queue |
 | Component | 1 | Modal dialogs |
-| Misc | 8 | Pipes, webhooks, timers, metrics, canvas |
+| Misc | 9 | Pipes, webhooks, timers, metrics, canvas |
 
 See [Appendix A](#appendix-a-complete-action-reference) for complete action reference.
 
@@ -994,7 +994,7 @@ The `when` condition:
 flows:
   - name: greet_user              # REQUIRED: Unique name
     description: "Greet a user"   # OPTIONAL: Documentation
-    params:                       # OPTIONAL: Parameters
+    parameters:                   # OPTIONAL: Parameters
       - name: user
         type: object
         required: true
@@ -1105,9 +1105,9 @@ When limits are exceeded:
 ```yaml
 - flow_while:
     while: "${counter < 10}"  # REQUIRED: Loop condition
-    actions:                  # REQUIRED: Loop body
+    do:                       # REQUIRED: Loop body
       - increment:
-          name: counter
+          var: counter
           by: 1
           scope: global
 ```
@@ -1118,7 +1118,7 @@ When limits are exceeded:
 - repeat:
     times: 5                  # REQUIRED: Iteration count
     as: i                     # OPTIONAL: Loop counter variable
-    actions:                  # REQUIRED: Loop body
+    do:                       # REQUIRED: Loop body
       - log:
           message: "Iteration ${i}"
 ```
@@ -1142,20 +1142,19 @@ When limits are exceeded:
 ```yaml
 - batch:
     items: "${users}"         # REQUIRED: Items to process
-    as: user                  # REQUIRED: Item variable name
-    actions:                  # REQUIRED: Actions per item
+    as: user                  # OPTIONAL: Item variable name
+    each:                     # REQUIRED: Actions per item (or single action)
       - send_dm:
           user: "${user.id}"
           content: "Hello!"
-    parallel: true            # OPTIONAL: Process in parallel
-    concurrency: 5            # OPTIONAL: Max parallel (default: 10)
+    concurrency: 5            # OPTIONAL: Max concurrent (default: 10)
 ```
 
 #### 7.5.10 `try` - Error Handling
 
 ```yaml
 - try:
-    actions:                  # REQUIRED: Actions to try
+    do:                       # REQUIRED: Actions to try
       - send_message:
           channel: "${channelId}"
           content: "Hello"
@@ -1243,7 +1242,7 @@ All functions in categories: Math, String, Array, Object, Type, Conversion, Util
 - Discord-specific functions
 - Message/Member/Channel/Voice/Component actions
 
-### 8.2 Standard Runtime (63 Actions)
+### 8.2 Standard Runtime (64 Actions)
 
 A standard runtime supports most production use cases.
 
@@ -1256,26 +1255,26 @@ A standard runtime supports most production use cases.
 | Channel (9) | `create_channel`, `edit_channel`, `delete_channel`, `create_thread`, `archive_thread`, `set_channel_permissions`, `create_role`, `edit_role`, `delete_role` |
 | Component (1) | `show_modal` |
 | Database (4) | `db_insert`, `db_update`, `db_delete`, `db_query` |
-| Misc (4) | `pipe_request`, `pipe_send`, `webhook_send`, `create_timer`, `cancel_timer` |
+| Misc (5) | `pipe_request`, `pipe_send`, `webhook_send`, `create_timer`, `cancel_timer` |
 
 **Required Functions:**
 All 69 functions
 
 **Not Required:**
 - Voice actions (17)
-- Canvas action (1)
-- Metrics actions (2)
+- Canvas actions (2): `canvas_render`, `render_layers`
+- Metrics actions (2): `counter_increment`, `record_metric`
 
-### 8.3 Full Runtime (84 Actions)
+### 8.3 Full Runtime (85 Actions)
 
 A full runtime implements all FURLOW features.
 
 **Required Actions:**
 | Category | Actions |
 |----------|---------|
-| Standard (63) | All standard actions |
+| Standard (64) | All standard actions |
 | Voice (17) | `voice_join`, `voice_leave`, `voice_play`, `voice_pause`, `voice_resume`, `voice_stop`, `voice_skip`, `voice_seek`, `voice_volume`, `voice_set_filter`, `voice_search`, `queue_get`, `queue_add`, `queue_remove`, `queue_clear`, `queue_shuffle`, `queue_loop` |
-| Misc (4) | `counter_increment`, `record_metric`, `canvas_render` |
+| Canvas/Metrics (4) | `counter_increment`, `record_metric`, `canvas_render`, `render_layers` |
 
 **Required Functions:**
 All 69 functions
@@ -1445,7 +1444,7 @@ Assign a role to a member.
 
 ```yaml
 - assign_role:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     role: "${roleId}"           # Role ID
     reason: "Verified"          # Optional audit log reason
 ```
@@ -1455,7 +1454,7 @@ Remove a role from a member.
 
 ```yaml
 - remove_role:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     role: "${roleId}"           # Role ID
     reason: "Expired"           # Optional audit log reason
 ```
@@ -1465,7 +1464,7 @@ Toggle a role on/off.
 
 ```yaml
 - toggle_role:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     role: "${roleId}"           # Role ID
     reason: "Toggled"           # Optional audit log reason
 ```
@@ -1475,7 +1474,7 @@ Kick a member from the guild.
 
 ```yaml
 - kick:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     reason: "Violation"         # Optional audit log reason
 ```
 
@@ -1484,9 +1483,9 @@ Ban a member from the guild.
 
 ```yaml
 - ban:
-    member: "${memberId}"       # Member/User ID
+    user: "${memberId}"         # Member/User ID
     reason: "Severe violation"  # Optional audit log reason
-    deleteMessageDays: 7        # Optional: delete message history (0-7)
+    delete_message_days: 7      # Optional: delete message history (0-7)
 ```
 
 #### `unban`
@@ -1503,7 +1502,7 @@ Timeout (mute) a member.
 
 ```yaml
 - timeout:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     duration: "5m"              # Timeout duration
     reason: "Spam"              # Optional audit log reason
 ```
@@ -1513,7 +1512,7 @@ Remove timeout from a member.
 
 ```yaml
 - remove_timeout:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     reason: "Forgiven"          # Optional audit log reason
 ```
 
@@ -1532,7 +1531,7 @@ Set a member's nickname.
 
 ```yaml
 - set_nickname:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     nickname: "New Name"        # New nickname (null to reset)
     reason: "Name change"       # Optional audit log reason
 ```
@@ -1542,7 +1541,7 @@ Move a member to a different voice channel.
 
 ```yaml
 - move_member:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     channel: "${voiceChannelId}"  # Target voice channel
 ```
 
@@ -1551,7 +1550,7 @@ Disconnect a member from voice.
 
 ```yaml
 - disconnect_member:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
 ```
 
 #### `server_mute`
@@ -1559,7 +1558,7 @@ Server mute a member in voice.
 
 ```yaml
 - server_mute:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     muted: true                 # Mute state
     reason: "Moderation"        # Optional audit log reason
 ```
@@ -1569,7 +1568,7 @@ Server deafen a member in voice.
 
 ```yaml
 - server_deafen:
-    member: "${memberId}"       # Member ID
+    user: "${memberId}"         # Member/User ID
     deafened: true              # Deafen state
     reason: "Moderation"        # Optional audit log reason
 ```
@@ -1587,8 +1586,7 @@ Create a new channel.
     topic: "Channel topic"      # Optional topic
     nsfw: false                 # Optional NSFW flag
     position: 0                 # Optional position
-    permissionOverwrites: []    # Optional permissions
-    reason: "New channel"       # Optional audit log reason
+    permission_overwrites: []   # Optional permissions
     as: newChannel              # Store created channel
 ```
 
@@ -1623,8 +1621,8 @@ Create a thread.
     channel: "${channelId}"     # Parent channel ID
     name: "Thread Name"         # Thread name
     message: "${messageId}"     # Optional: create from message
-    autoArchiveDuration: 1440   # Minutes: 60|1440|4320|10080
-    reason: "Discussion"        # Optional audit log reason
+    auto_archive_duration: 1440 # Minutes: 60|1440|4320|10080
+    type: "public"              # public|private
     as: newThread               # Store created thread
 ```
 
@@ -1701,7 +1699,7 @@ Set a state variable.
 
 ```yaml
 - set:
-    name: "counter"             # Variable name
+    var: "counter"              # Variable name (or use 'key')
     value: 42                   # Value to set
     scope: guild                # Scope: global|guild|channel|user|member
 ```
@@ -1711,7 +1709,7 @@ Increment a numeric variable.
 
 ```yaml
 - increment:
-    name: "counter"             # Variable name
+    var: "counter"              # Variable name
     by: 1                       # Amount to increment (default: 1)
     scope: guild                # Scope
 ```
@@ -1721,7 +1719,7 @@ Decrement a numeric variable.
 
 ```yaml
 - decrement:
-    name: "counter"             # Variable name
+    var: "counter"              # Variable name
     by: 1                       # Amount to decrement (default: 1)
     scope: guild                # Scope
 ```
@@ -1731,7 +1729,7 @@ Add item to a list variable.
 
 ```yaml
 - list_push:
-    name: "history"             # Variable name
+    var: "history"              # Variable name (or use 'key')
     value: "${item}"            # Value to add
     scope: user                 # Scope
 ```
@@ -1741,7 +1739,7 @@ Remove item from a list variable.
 
 ```yaml
 - list_remove:
-    name: "history"             # Variable name
+    var: "history"              # Variable name (or use 'key')
     value: "${item}"            # Value to remove
     scope: user                 # Scope
 ```
@@ -1751,8 +1749,8 @@ Set a key in a map variable.
 
 ```yaml
 - set_map:
-    name: "settings"            # Variable name
-    key: "theme"                # Map key
+    var: "settings"             # Variable name (or use 'key')
+    map_key: "theme"            # Map key
     value: "dark"               # Value to set
     scope: member               # Scope
 ```
@@ -1762,8 +1760,8 @@ Delete a key from a map variable.
 
 ```yaml
 - delete_map:
-    name: "settings"            # Variable name
-    key: "theme"                # Map key to delete
+    var: "settings"             # Variable name (or use 'key')
+    map_key: "theme"            # Map key to delete
     scope: member               # Scope
 ```
 
@@ -1828,9 +1826,9 @@ Loop while condition is true.
 ```yaml
 - flow_while:
     while: "${i < 10}"          # Loop condition
-    actions:                    # Loop body
+    do:                         # Loop body
       - increment:
-          name: i
+          var: i
           scope: global
 ```
 
@@ -1841,7 +1839,7 @@ Fixed iteration loop.
 - repeat:
     times: 5                    # Iteration count
     as: i                       # Loop counter variable
-    actions: [...]              # Loop body
+    do: [...]                   # Loop body
 ```
 
 #### `parallel`
@@ -1860,8 +1858,7 @@ Process items.
 - batch:
     items: "${users}"           # Items to process
     as: user                    # Item variable name
-    actions: [...]              # Actions per item
-    parallel: true              # Run in parallel
+    each: [...]                 # Actions per item
     concurrency: 5              # Max concurrent
 ```
 
@@ -1870,7 +1867,7 @@ Error handling.
 
 ```yaml
 - try:
-    actions: [...]              # Actions to try
+    do: [...]                   # Actions to try
     catch: [...]                # Actions on error
     finally: [...]              # Always execute
 ```
@@ -1950,7 +1947,7 @@ Query rows.
     table: "warnings"           # Table name
     where:                      # Optional filter
       userId: "${user.id}"
-    orderBy: "timestamp"        # Optional sort field
+    order_by: "timestamp"       # Optional sort field
     order: "desc"               # asc|desc
     limit: 10                   # Optional limit
     offset: 0                   # Optional offset
@@ -1965,8 +1962,8 @@ Join a voice channel.
 ```yaml
 - voice_join:
     channel: "${voiceChannelId}"  # Voice channel ID
-    selfDeaf: true              # Self deafen
-    selfMute: false             # Self mute
+    self_deaf: true             # Self deafen
+    self_mute: false            # Self mute
 ```
 
 #### `voice_leave`
@@ -2122,7 +2119,7 @@ Display a modal form.
         maxLength: 1000
 ```
 
-### A.9 Miscellaneous Actions (8)
+### A.9 Miscellaneous Actions (9)
 
 #### `pipe_request`
 Make HTTP request.
@@ -2154,7 +2151,7 @@ Send via Discord webhook.
     url: "${webhookUrl}"        # Webhook URL
     content: "Hello"            # Message content
     username: "Bot"             # Optional username override
-    avatarUrl: "https://..."    # Optional avatar override
+    avatar_url: "https://..."   # Optional avatar override
     embeds: []                  # Optional embeds
 ```
 
@@ -2165,6 +2162,7 @@ Create a timer.
 - create_timer:
     id: "reminder_${user.id}"   # Timer ID
     duration: "1h"              # Timer duration
+    event: "reminder"           # Event name to emit when timer fires
     data:                       # Data for timer_fire event
       userId: "${user.id}"
       message: "${message}"
@@ -2201,18 +2199,32 @@ Record a metric value.
 ```
 
 #### `canvas_render`
-Render and send a canvas image.
+Render a canvas image using a named generator.
 
 ```yaml
 - canvas_render:
-    type: "welcome"             # welcome|rank|custom
-    options:                    # Type-specific options
-      background: "#5865F2"
+    generator: "welcome_card"   # Canvas generator name
+    context:                    # Context data for generator
       avatar: "${user.avatarURL}"
       username: "${user.username}"
-      message: "Welcome!"
-    channel: "${channelId}"     # Channel to send to
-    as: sentMessage             # Store sent message
+    as: imageBuffer             # Store rendered image buffer
+```
+
+#### `render_layers`
+Render inline canvas layers without a pre-defined generator.
+
+```yaml
+- render_layers:
+    width: 800                  # Canvas width
+    height: 400                 # Canvas height
+    background: "#5865F2"       # Background color
+    layers:                     # Layer definitions
+      - type: text
+        text: "Welcome!"
+        x: 400
+        y: 200
+    format: "png"               # png|jpeg
+    as: imageBuffer             # Store rendered image buffer
 ```
 
 ---

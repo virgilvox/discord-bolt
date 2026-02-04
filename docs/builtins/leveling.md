@@ -353,7 +353,7 @@ events:
     actions:
       - set:
           scope: guild
-          key: "xp_multiplier"
+          var: "xp_multiplier"
           value: 2.0
       - create_timer:
           id: "double_xp_end"
@@ -364,7 +364,7 @@ events:
     actions:
       - set:
           scope: guild
-          key: "xp_multiplier"
+          var: "xp_multiplier"
           value: 1.0
       - send_message:
           channel: "announcements"
