@@ -4,21 +4,21 @@
 
 FURLOW (**F**lexible **U**ser **R**ules for **L**ive **O**nline **W**orkers) is a declarative Discord bot framework that allows building bots using YAML specifications. The project is a TypeScript monorepo using pnpm workspaces and Turborepo.
 
-## Current State: v1.0.1 - FEATURE COMPLETE
+## Current State: v1.0.2 - FEATURE COMPLETE
 
 As of 2026-02-04, all 9 packages are published to npm with comprehensive test coverage. **All code features are 100% implemented.**
 
 | Package | Version | Status | Tests | Notes |
 |---------|---------|--------|-------|-------|
-| `@furlow/schema` | 1.0.1 | ✅ Published | - | Type definitions and JSON schemas |
-| `@furlow/storage` | 1.0.1 | ✅ Published | 197 | Memory, SQLite, PostgreSQL + contract tests |
-| `@furlow/core` | 1.0.1 | ✅ Published | 856 | Full handler coverage, scheduler, events, automod |
-| `@furlow/discord` | 1.0.1 | ✅ Published | 79 | Discord.js wrapper, voice, video, interactions |
-| `@furlow/pipes` | 1.0.1 | ✅ Published | 234 | HTTP, WebSocket, Webhook, MQTT, TCP, UDP, File, Database |
-| `@furlow/testing` | 1.0.1 | ✅ Published | 192 | Mocks, fixtures, E2E tests, bot lifecycle, database helpers |
-| `@furlow/builtins` | 1.0.1 | ✅ Published | 398 | 14 builtin modules with comprehensive tests |
-| `@furlow/dashboard` | 1.0.1 | ✅ Published | - | Express server + React client + 18 API endpoints |
-| `@furlow/cli` | 1.0.1 | ✅ Published | - | Command-line interface (init, start, validate, add, export) |
+| `@furlow/schema` | 1.0.2 | ✅ Published | - | Type definitions and JSON schemas |
+| `@furlow/storage` | 1.0.2 | ✅ Published | 197 | Memory, SQLite, PostgreSQL + contract tests |
+| `@furlow/core` | 1.0.2 | ✅ Published | 856 | Full handler coverage, scheduler, events, automod |
+| `@furlow/discord` | 1.0.2 | ✅ Published | 79 | Discord.js wrapper, voice, video, interactions |
+| `@furlow/pipes` | 1.0.2 | ✅ Published | 234 | HTTP, WebSocket, Webhook, MQTT, TCP, UDP, File, Database |
+| `@furlow/testing` | 1.0.2 | ✅ Published | 192 | Mocks, fixtures, E2E tests, bot lifecycle, database helpers |
+| `@furlow/builtins` | 1.0.2 | ✅ Published | 398 | 14 builtin modules with comprehensive tests |
+| `@furlow/dashboard` | 1.0.2 | ✅ Published | - | Express server + React client + 18 API endpoints |
+| `@furlow/cli` | 1.0.2 | ✅ Published | - | Command-line interface (init, start, validate, add, export) |
 
 **Total Tests: 1,956+ (All Passing)**
 
