@@ -26,24 +26,48 @@ automod:
   log_channel: "${env.MOD_LOG_CHANNEL}"
   rules:
     - name: spam
-      type: spam
-      threshold: 5
-      window: 10s
-      action: timeout
-      duration: 5m
+      trigger:
+        type: spam
+        threshold: 5
+        window: "10s"
+      actions:
+        - timeout:
+            user: "${user.id}"
+            duration: "5m"
+            reason: "Message spam detected"
 
     - name: invites
-      type: invites
-      action: delete
-      warn: true
-      exempt_roles:
-        - "${env.STAFF_ROLE}"
+      trigger:
+        type: invite
+      exempt:
+        roles:
+          - "${env.STAFF_ROLE}"
+      actions:
+        - delete_message: {}
+        - warn:
+            user: "${user.id}"
+            reason: "Posting invites is not allowed"
 
     - name: mass_mentions
-      type: mentions
-      threshold: 5
-      action: timeout
-      duration: 10m
+      trigger:
+        type: mention_spam
+        threshold: 5
+      actions:
+        - timeout:
+            user: "${user.id}"
+            duration: "10m"
+            reason: "Mass mention spam"
+
+    - name: duplicates
+      trigger:
+        type: duplicate
+        threshold: 3
+        window: "1m"
+      actions:
+        - delete_message: {}
+        - send_dm:
+            user: "${user.id}"
+            content: "Please avoid sending duplicate messages."
 
 # Flows
 flows:

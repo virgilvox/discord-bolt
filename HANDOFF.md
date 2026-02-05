@@ -68,13 +68,13 @@ As of 2026-02-05, all 9 packages are published to npm. **All code features are 1
 |---------|---------|--------|-------|-----------------|
 | `@furlow/schema` | 1.0.3 | ✅ Published | - | Type definitions only |
 | `@furlow/storage` | 1.0.3 | ✅ Published | 226 | ✅ Good - real adapters tested |
-| `@furlow/core` | 1.0.3 | ✅ Published | 1308 | ✅ Critical paths now tested |
+| `@furlow/core` | 1.0.9 | ✅ Published | 1331 | ✅ Critical paths now tested |
 | `@furlow/discord` | 1.0.3 | ✅ Published | 127 | ✅ Voice tests fixed |
 | `@furlow/pipes` | 1.0.3 | ✅ Published | 256 | ✅ WebSocket mock fixed |
 | `@furlow/testing` | 1.0.3 | ✅ Published | 281 | ✅ Test utilities + E2E framework (all 75 E2E tests passing) |
 | `@furlow/builtins` | 1.0.3 | ✅ Published | 437 | ⚠️ Structure-only tests (P3 priority) |
 | `@furlow/dashboard` | 1.0.3 | ✅ Published | - | No tests |
-| `@furlow/cli` | 1.0.3 | ✅ Published | - | No tests |
+| `@furlow/cli` | 1.0.13 | ✅ Published | - | No tests |
 
 **Total Tests: 2,635 (All Passing)**
 

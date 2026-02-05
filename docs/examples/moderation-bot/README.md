@@ -84,10 +84,14 @@ Staff close tickets with:
 automod:
   rules:
     - name: caps_lock
-      type: caps
-      threshold: 70  # 70% caps
-      action: delete
-      warn: true
+      trigger:
+        type: caps
+        threshold: 70  # 70% caps
+      actions:
+        - delete_message: {}
+        - warn:
+            user: "${user.id}"
+            reason: "Excessive caps"
 ```
 
 ### Adjust Warning Thresholds

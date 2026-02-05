@@ -527,21 +527,53 @@ automod:
   enabled: true
   log_channel: "${env.MOD_LOG_CHANNEL}"
   rules:
-    - name: spam
-      type: spam
-      threshold: 5
-      window: 10s
-      action: timeout
-      duration: 5m
-
     - name: bad_words
-      type: words
-      words:
-        - badword1
-        - badword2
-      action: delete
-      warn: true
+      trigger:
+        type: keyword
+        keywords:
+          - "badword1"
+          - "badword2"
+      exempt:
+        roles:
+          - "mod_role_id"
+      actions:
+        - delete_message: {}
+        - warn:
+            user: "${user.id}"
+            reason: "Prohibited language"
+
+    - name: spam_protection
+      trigger:
+        type: spam
+        threshold: 5
+        window: "10s"
+      actions:
+        - timeout:
+            user: "${user.id}"
+            duration: "5m"
+            reason: "Message spam"
+
+    - name: duplicate_detection
+      trigger:
+        type: duplicate
+        threshold: 3
+        window: "1m"
+      actions:
+        - delete_message: {}
 ```
+
+**Trigger Types:**
+- `keyword` - Match specific words (keywords array, optional allowed array)
+- `regex` - Match regex patterns (regex array)
+- `link` - Block links (optional allowed/blocked domain arrays)
+- `invite` - Block Discord invites
+- `caps` - Excessive caps (threshold % default 70)
+- `emoji_spam` - Too many emojis (threshold default 10)
+- `mention_spam` - Too many mentions (threshold default 5)
+- `newline_spam` - Excessive newlines (threshold default 10)
+- `attachment` - Block attachments (threshold count, blocked/allowed extensions)
+- `spam` - Message rate limiting (threshold count, window duration)
+- `duplicate` - Repeated message detection (threshold count, window duration)
 
 ---
 
