@@ -236,11 +236,29 @@ export async function startCommand(
             // Execute actions using the action executor
             if (cmd.actions) {
               const actions = normalizeActions(cmd.actions);
-              await actionExecutor.executeSequence(actions, context);
+              const results = await actionExecutor.executeSequence(actions, context);
+
+              // Check for failed actions
+              const failedResult = results.find(r => !r.success);
+              if (failedResult && failedResult.error) {
+                console.error(chalk.red(`Action failed in command ${cmd.name}:`), failedResult.error.message);
+
+                // If interaction was deferred but not replied, send error message
+                if (interaction.deferred && !interaction.replied) {
+                  await interaction.editReply({
+                    content: `Error: ${failedResult.error.message}`,
+                  }).catch(() => {});
+                }
+              }
             }
           } catch (err) {
             console.error(chalk.red(`Error in command ${cmd.name}:`), err);
-            if (!interaction.replied && !interaction.deferred) {
+            // Handle both deferred and non-deferred interactions
+            if (interaction.deferred && !interaction.replied) {
+              await interaction.editReply({
+                content: 'An error occurred while executing this command.',
+              }).catch(() => {});
+            } else if (!interaction.replied && !interaction.deferred) {
               await interaction.reply({
                 content: 'An error occurred while executing this command.',
                 ephemeral: true

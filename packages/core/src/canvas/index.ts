@@ -117,19 +117,20 @@ export class CanvasRenderer {
     if (this.initialized) return;
 
     try {
-      // Dynamic import of canvas module (typed as unknown first since it's optional)
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const canvasModule = await (Function('return import("canvas")')() as Promise<unknown>);
-      this.canvasModule = canvasModule as CanvasModule;
+      // Dynamic import of canvas module (optional peer dependency)
+      const canvasModule = await import('canvas');
+      this.canvasModule = canvasModule as unknown as CanvasModule;
       this.initialized = true;
 
       // Register fonts
       for (const [name, path] of this.fonts) {
         this.canvasModule!.registerFont(path, { family: name });
       }
-    } catch {
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       throw new Error(
-        'Canvas module not available. Install it with: npm install canvas\n' +
+        `Canvas module not available: ${errorMessage}\n` +
+        'Install it with: npm install canvas\n' +
         'Note: canvas requires native build tools. See https://github.com/Automattic/node-canvas#compiling'
       );
     }
