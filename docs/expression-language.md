@@ -77,6 +77,10 @@ nickname: "${member?.nickname}"
 
 ## Context Variables
 
+> **Note:** The CLI passes raw Discord.js objects directly to expressions.
+> Use **camelCase** property names matching Discord.js (e.g., `displayName`, `memberCount`).
+> URL methods like `displayAvatarURL` are automatically called - no parentheses needed.
+
 ### User Context
 | Variable | Type | Description |
 |----------|------|-------------|
@@ -84,38 +88,35 @@ nickname: "${member?.nickname}"
 | `user.username` | string | Username |
 | `user.discriminator` | string | Discriminator (legacy) |
 | `user.tag` | string | User tag (username#0000) |
-| `user.avatar` | string | Avatar URL |
+| `user.avatar` | string | Avatar hash (NOT a URL) |
+| `user.avatarURL` | string | Avatar URL (auto-resolved from method) |
+| `user.displayAvatarURL` | string | Avatar URL with fallback (auto-resolved) |
 | `user.bot` | boolean | Whether user is a bot |
-| `user.mention` | string | User mention string |
-| `user.created_at` | Date | Account creation date |
+| `user.createdAt` | Date | Account creation date |
 
 ### Member Context
 | Variable | Type | Description |
 |----------|------|-------------|
 | `member.id` | string | Member's Discord ID |
 | `member.nickname` | string | Server nickname |
-| `member.display_name` | string | Display name in server |
-| `member.roles` | string[] | Array of role names |
-| `member.role_ids` | string[] | Array of role IDs |
-| `member.joined_at` | Date | When they joined |
-| `member.boosting_since` | Date | Boost start date |
-| `member.is_boosting` | boolean | Whether member is boosting |
-| `member.highest_role` | string | Highest role name |
-| `member.permissions` | string[] | Permission names |
-| `member.is_owner` | boolean | Whether member is server owner |
-| `member.mention` | string | Member mention |
+| `member.displayName` | string | Display name in server |
+| `member.displayAvatarURL` | string | Member avatar URL (auto-resolved) |
+| `member.roles` | Collection | Role collection |
+| `member.joinedAt` | Date | When they joined |
+| `member.premiumSince` | Date | Boost start date |
 
 ### Guild Context
 | Variable | Type | Description |
 |----------|------|-------------|
 | `guild.id` | string | Server ID |
 | `guild.name` | string | Server name |
-| `guild.icon` | string | Icon URL |
-| `guild.member_count` | number | Total members |
-| `guild.owner_id` | string | Owner's user ID |
-| `guild.created_at` | Date | Creation date |
-| `guild.premium_tier` | number | Nitro boost level (0-3) |
-| `guild.boost_count` | number | Number of boosts |
+| `guild.icon` | string | Icon hash (NOT a URL) |
+| `guild.iconURL` | string | Icon URL (auto-resolved from method) |
+| `guild.memberCount` | number | Total members |
+| `guild.ownerId` | string | Owner's user ID |
+| `guild.createdAt` | Date | Creation date |
+| `guild.premiumTier` | number | Nitro boost level (0-3) |
+| `guild.premiumSubscriptionCount` | number | Number of boosts |
 
 ### Channel Context
 | Variable | Type | Description |

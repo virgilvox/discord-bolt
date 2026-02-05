@@ -15,6 +15,25 @@ As of 2026-02-04, all 9 packages are published to npm. **All code features are 1
 - **All critical P0 items from test audit completed**
 - See "Test Suite Overhaul Completed" section below for full details.
 
+**✅ CLI Runtime Fix (2026-02-05):** Discord.js URL methods now work as properties:
+- ✅ `${user.displayAvatarURL}` returns the URL string (not function reference)
+- ✅ Also works: `avatarURL`, `bannerURL`, `iconURL`, `splashURL`, `discoverySplashURL`
+- See "Discord.js URL Methods Fix" section below for technical details
+
+**✅ LLM Reference Documentation Audit (2026-02-05):** Comprehensive line-by-line audit of `docs/reference/llm-reference.md`:
+- ✅ Fixed voice_set_filter list (removed invalid filters, added correct ones: 8d, normalizer)
+- ✅ Updated context variables section with full camelCase Discord.js properties
+- ✅ Added URL methods auto-resolution documentation
+- ✅ Fixed array transforms (filter takes key/value, map takes key only)
+- ✅ Added field aliases section (var↔key, message↔message_id, if↔condition)
+- ✅ Added action shorthand syntax documentation
+- ✅ Added subcommands and subcommand_groups examples
+- ✅ Added component interaction context (values, fields, custom_id)
+- ✅ Added state access patterns with scope examples
+- ✅ Added automod trigger types list
+- ✅ Added Discord permissions reference
+- ✅ Fixed function count (69 not 71)
+
 **Critical Implementation Fix Pass (2026-02-04):** Deep audit revealed hidden implementation gaps that have been fixed:
 - ✅ Voice FFmpeg filters now work (were silently ignored before)
 - ✅ Webhook signature verification is fail-closed secure (was always returning true)
@@ -1121,6 +1140,81 @@ The `docs/reference/llm-reference.md` provides a comprehensive reference for AI 
 ### Build Fixes
 - Fixed pnpm filter syntax in workflow: `pnpm --filter @furlow/schema build`
 - Removed `@types/canvas` from optionalDependencies (caused lockfile mismatch in CI)
+
+---
+
+### Discord.js URL Methods Fix (2026-02-05)
+
+**Problem:** Canvas images and embed thumbnails failed to load when using `${user.displayAvatarURL}`.
+
+**Root Cause Analysis:**
+
+1. **Discord.js v14 uses methods, not properties** for avatar/icon URLs:
+   - `user.displayAvatarURL()` - method that returns URL string
+   - `user.avatarURL()` - method that returns URL string
+   - `guild.iconURL()` - method that returns URL string
+
+2. **JEXL cannot call methods on context objects:**
+   ```javascript
+   // Property access (no parens) - returns function reference
+   jexl.eval('user.displayAvatarURL', context)  // → [Function]
+
+   // Method call (with parens) - throws error
+   jexl.eval('user.displayAvatarURL()', context)  // → Error: "Jexl Function displayAvatarURL is not defined"
+   ```
+
+3. **Result:** When canvas_render evaluated `src: "${user.displayAvatarURL}"`, it got a function reference instead of a URL string, causing `ENOENT` errors when trying to load the "image".
+
+**Solution:** Proxy wrapper in `apps/cli/src/commands/start.ts`
+
+```typescript
+function wrapDiscordObject<T extends object>(obj: T | null | undefined): T | null | undefined {
+  if (!obj) return obj;
+
+  const urlMethods = new Set([
+    'displayAvatarURL', 'avatarURL', 'bannerURL',
+    'iconURL', 'splashURL', 'discoverySplashURL',
+  ]);
+
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      // Auto-call URL methods when accessed as properties
+      if (urlMethods.has(prop as string) && typeof value === 'function') {
+        return value.call(target, { size: 512, dynamic: true });
+      }
+
+      if (typeof value === 'function') {
+        return value.bind(target);
+      }
+      return value;
+    }
+  }) as T;
+}
+```
+
+**Applied to:** All Discord objects in `buildActionContext()`:
+- `context.user` (User)
+- `context.member` (GuildMember)
+- `context.guild` (Guild)
+- `context.channel` (Channel)
+- Command options of type `user` and `channel`
+
+**Usage (no parentheses needed):**
+```yaml
+# Canvas - works now
+layers:
+  - type: circle_image
+    src: "${user.displayAvatarURL}"
+
+# Embeds - works now
+embeds:
+  - thumbnail:
+      url: "${user.displayAvatarURL}"
+```
+
+**Note:** The core package has a separate context builder (`packages/core/src/expression/context.ts`) that creates plain objects with `avatar` as a string property. The CLI intentionally passes raw Discord.js objects for full API access, which is why this proxy was needed.
 
 ---
 

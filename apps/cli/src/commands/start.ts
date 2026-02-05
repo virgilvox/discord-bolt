@@ -288,11 +288,11 @@ export async function startCommand(
                 const value = interaction.options.get(opt.name)?.value;
                 (context.options as Record<string, unknown>)[opt.name] = value;
 
-                // Handle user/channel/role types
+                // Handle user/channel/role types - wrap with proxy for URL method access
                 if (opt.type === 'user') {
-                  (context.options as Record<string, unknown>)[opt.name] = interaction.options.getUser(opt.name);
+                  (context.options as Record<string, unknown>)[opt.name] = wrapDiscordObject(interaction.options.getUser(opt.name));
                 } else if (opt.type === 'channel') {
-                  (context.options as Record<string, unknown>)[opt.name] = interaction.options.getChannel(opt.name);
+                  (context.options as Record<string, unknown>)[opt.name] = wrapDiscordObject(interaction.options.getChannel(opt.name));
                 } else if (opt.type === 'role') {
                   (context.options as Record<string, unknown>)[opt.name] = interaction.options.getRole(opt.name);
                 }
@@ -852,13 +852,14 @@ function buildActionContext(options: {
   };
 
   // Add interaction context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.interaction) {
     const interaction = options.interaction;
     context.interaction = interaction;
-    context.user = interaction.user;
-    context.member = interaction.member;
-    context.channel = interaction.channel;
-    context.guild = interaction.guild;
+    context.user = wrapDiscordObject(interaction.user);
+    context.member = wrapDiscordObject(interaction.member);
+    context.channel = wrapDiscordObject(interaction.channel);
+    context.guild = wrapDiscordObject(interaction.guild);
     context.client = options.client;
 
     context.guildId = interaction.guildId;
@@ -867,13 +868,14 @@ function buildActionContext(options: {
   }
 
   // Add message context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.message) {
     const message = options.message;
     context.message = message;
-    context.user = message.author;
-    context.member = message.member;
-    context.channel = message.channel;
-    context.guild = message.guild;
+    context.user = wrapDiscordObject(message.author);
+    context.member = wrapDiscordObject(message.member);
+    context.channel = wrapDiscordObject(message.channel);
+    context.guild = wrapDiscordObject(message.guild);
     context.client = options.client;
 
     context.guildId = message.guildId;
@@ -883,11 +885,12 @@ function buildActionContext(options: {
   }
 
   // Add member context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.member) {
     const member = options.member;
-    context.member = member;
-    context.user = member.user;
-    context.guild = member.guild;
+    context.member = wrapDiscordObject(member);
+    context.user = wrapDiscordObject(member.user);
+    context.guild = wrapDiscordObject(member.guild);
     context.client = options.client;
 
     context.guildId = member.guild?.id;
@@ -895,13 +898,14 @@ function buildActionContext(options: {
   }
 
   // Add reaction context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.reaction) {
     const reaction = options.reaction;
     context.reaction = reaction;
     context.emoji = reaction.emoji;
     context.message = reaction.message;
-    context.channel = reaction.message?.channel;
-    context.guild = reaction.message?.guild;
+    context.channel = wrapDiscordObject(reaction.message?.channel);
+    context.guild = wrapDiscordObject(reaction.message?.guild);
     context.client = options.client;
 
     context.guildId = reaction.message?.guildId;
@@ -910,34 +914,38 @@ function buildActionContext(options: {
   }
 
   // Add user context (for reactions)
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.user) {
-    context.user = options.user;
+    context.user = wrapDiscordObject(options.user);
     context.userId = options.user.id;
   }
 
   // Add role context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.role) {
     context.role = options.role;
-    context.guild = options.role.guild;
+    context.guild = wrapDiscordObject(options.role.guild);
     context.guildId = options.role.guild?.id;
   }
 
   // Add channel context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.channel) {
-    context.channel = options.channel;
+    context.channel = wrapDiscordObject(options.channel);
     context.channelId = options.channel.id;
     if ('guild' in options.channel) {
-      context.guild = options.channel.guild;
+      context.guild = wrapDiscordObject(options.channel.guild);
       context.guildId = options.channel.guild?.id;
     }
   }
 
   // Add thread context
+  // Wrap Discord objects with proxy to convert URL methods to properties
   if (options.thread) {
     context.thread = options.thread;
-    context.channel = options.thread;
+    context.channel = wrapDiscordObject(options.thread);
     context.channelId = options.thread.id;
-    context.guild = options.thread.guild;
+    context.guild = wrapDiscordObject(options.thread.guild);
     context.guildId = options.thread.guildId;
   }
 
@@ -993,4 +1001,50 @@ function getOptionType(type: string): number {
     attachment: 11,
   };
   return types[type] ?? 3;
+}
+
+/**
+ * Create a proxy for Discord.js objects that converts URL methods to properties.
+ *
+ * Discord.js v14 uses methods like `displayAvatarURL()` and `avatarURL()` instead of properties.
+ * JEXL (the expression evaluator) cannot call methods - `${user.displayAvatarURL()}` throws an error.
+ * When you access `${user.displayAvatarURL}` without parentheses, JEXL returns the function reference.
+ *
+ * This proxy intercepts property access and calls URL methods automatically, so YAML authors
+ * can write `${user.displayAvatarURL}` and get the actual URL string.
+ *
+ * @example
+ * // Without proxy: ${user.displayAvatarURL} returns [Function]
+ * // With proxy: ${user.displayAvatarURL} returns "https://cdn.discord.com/avatars/..."
+ */
+function wrapDiscordObject<T extends object>(obj: T | null | undefined): T | null | undefined {
+  if (!obj) return obj;
+
+  // Discord.js URL methods that should be called automatically when accessed as properties
+  const urlMethods = new Set([
+    'displayAvatarURL',
+    'avatarURL',
+    'bannerURL',
+    'iconURL',
+    'splashURL',
+    'discoverySplashURL',
+  ]);
+
+  return new Proxy(obj, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+
+      // If accessing a URL method, call it and return the URL string
+      if (urlMethods.has(prop as string) && typeof value === 'function') {
+        return value.call(target, { size: 512, dynamic: true });
+      }
+
+      // For other functions, bind them to preserve `this` context
+      if (typeof value === 'function') {
+        return value.bind(target);
+      }
+
+      return value;
+    }
+  }) as T;
 }

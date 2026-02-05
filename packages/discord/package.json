@@ -1,8 +1,13 @@
 {
   "name": "@furlow/discord",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Discord.js adapter for FURLOW bot framework",
-  "keywords": ["furlow", "discord", "bot", "discord.js"],
+  "keywords": [
+    "furlow",
+    "discord",
+    "bot",
+    "discord.js"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -39,7 +44,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",
@@ -53,8 +60,8 @@
   "dependencies": {
     "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "^0.17.0",
-    "@furlow/core": "workspace:*",
-    "@furlow/schema": "workspace:*",
+    "@furlow/core": "^1.0.8",
+    "@furlow/schema": "^1.0.3",
     "discord.js": "^14.14.0",
     "play-dl": "^1.9.0",
     "prism-media": "^1.3.5",

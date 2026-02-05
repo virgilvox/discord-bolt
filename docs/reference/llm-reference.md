@@ -287,7 +287,41 @@ state:
       scope: guild  # global | guild | channel | user | member
       type: number  # string | number | boolean | object | array
       default: 0
+  tables:
+    users:
+      columns:
+        id:
+          type: string
+          primary: true
+        name:
+          type: string
+        xp:
+          type: number
+          default: 0
 ```
+
+**Accessing State Variables:**
+
+State variables are accessed using `state.{scope}.{varname}`:
+
+```yaml
+# Set a variable
+- set:
+    var: "counter"
+    value: 10
+    scope: guild
+
+# Access in expressions
+content: "Count: ${state.guild.counter}"
+```
+
+| Scope | Access Pattern | Description |
+|-------|----------------|-------------|
+| `global` | `state.global.varname` | Shared across all guilds |
+| `guild` | `state.guild.varname` | Per-server state |
+| `channel` | `state.channel.varname` | Per-channel state |
+| `user` | `state.user.varname` | Per-user (across guilds) |
+| `member` | `state.member.varname` | Per-member (user in specific guild) |
 
 ### Commands
 
@@ -310,7 +344,57 @@ commands:
     when: "guild.id == '123'"
     actions:
       - reply:
-          content: "Hello, ${options.user?.display_name || user.username}!"
+          content: "Hello, ${options.user?.displayName ?? user.username}!"
+```
+
+**Commands with Subcommands:**
+
+```yaml
+commands:
+  - name: settings
+    description: Server settings
+    subcommands:
+      - name: view
+        description: View current settings
+        actions:
+          - reply:
+              content: "Current prefix: ${state.guild.prefix ?? '!'}"
+      - name: prefix
+        description: Change prefix
+        options:
+          - name: value
+            type: string
+            description: New prefix
+            required: true
+        actions:
+          - set:
+              var: prefix
+              value: "${options.value}"
+              scope: guild
+          - reply:
+              content: "Prefix set to ${options.value}"
+```
+
+**Commands with Subcommand Groups:**
+
+```yaml
+commands:
+  - name: admin
+    description: Admin commands
+    subcommand_groups:
+      - name: user
+        description: User management
+        subcommands:
+          - name: ban
+            description: Ban a user
+            options:
+              - name: target
+                type: user
+                required: true
+                description: User to ban
+            actions:
+              - ban:
+                  user: "${options.target.id}"
 ```
 
 ### Context Menus
@@ -338,7 +422,7 @@ events:
     actions:
       - send_message:
           channel: "${env.WELCOME_CHANNEL}"
-          content: "Welcome, ${member.display_name}!"
+          content: "Welcome, ${member.displayName}!"
 ```
 
 ### Flows
@@ -440,13 +524,13 @@ embeds:
     description: "Thanks for joining"
     color: 0x5865F2
     thumbnail:
-      url: "${member.avatar}"
+      url: "${user.displayAvatarURL}"  # Full URL required for embeds
     fields:
       - name: Members
-        value: "${guild.member_count}"
+        value: "${guild.memberCount}"
         inline: true
     footer:
-      text: "User #${guild.member_count}"
+      text: "User #${guild.memberCount}"
     timestamp: true
 ```
 
@@ -535,12 +619,46 @@ automod:
   log_channel: "${env.MOD_LOG_CHANNEL}"
   rules:
     - name: spam
-      type: spam
-      threshold: 5
-      window: 10s
-      action: timeout
-      duration: 5m
+      trigger:
+        type: spam         # keyword | regex | spam | mention_spam | link | invite | caps | emoji_spam | newline_spam | duplicate | attachment | mass_ping
+        threshold: 5
+        window: 10s
+      exempt:
+        roles:
+          - "mod_role_id"
+        channels:
+          - "spam_channel_id"
+      actions:
+        - timeout:
+            user: "${user.id}"
+            duration: "5m"
+            reason: "Spam detection"
+    - name: bad_words
+      trigger:
+        type: keyword
+        keywords:
+          - "badword1"
+          - "badword2"
+      actions:
+        - delete_message: {}
+        - send_dm:
+            user: "${user.id}"
+            content: "Your message was removed for containing prohibited content."
 ```
+
+**Automod Trigger Types:**
+- `keyword` - Match specific words (keywords array)
+- `regex` - Match regex patterns (regex array)
+- `spam` - Detect message spam (threshold, window)
+- `mention_spam` - Too many mentions (threshold)
+- `link` - Block links (allowed/blocked domains)
+- `invite` - Block Discord invites
+- `caps` - Excessive caps (threshold %)
+- `emoji_spam` - Too many emojis (threshold)
+- `newline_spam` - Excessive newlines
+- `duplicate` - Repeated messages
+- `attachment` - Block attachments
+- `mass_ping` - Block mass mentions
 
 ### Scheduler
 
@@ -572,11 +690,11 @@ canvas:
           x: 320
           y: 40
           radius: 80
-          src: "${user.avatar}"
+          src: "${user.displayAvatarURL}"  # Use displayAvatarURL for the full URL
         - type: text
           x: 400
           y: 215
-          text: "Welcome, ${member.display_name}!"
+          text: "Welcome, ${member.displayName}!"
           font: sans-serif
           size: 32
           color: "#FFFFFF"
@@ -590,6 +708,35 @@ imports:
   - commands/*.yaml
   - events/*.yaml
   - flows/moderation.yaml
+```
+
+---
+
+## Action Syntax
+
+FURLOW supports **shorthand action syntax** for cleaner YAML:
+
+```yaml
+# Shorthand (recommended) - action name as key
+- reply:
+    content: "Hello!"
+    ephemeral: true
+
+# Verbose (also valid) - explicit action field
+- action: reply
+  content: "Hello!"
+  ephemeral: true
+```
+
+Both formats work identically. The shorthand format is normalized internally before execution.
+
+**Conditional Actions with `when`:**
+
+```yaml
+# Execute action only when condition is true
+- reply:
+    content: "You have admin!"
+    when: "member.permissions.has('ADMINISTRATOR')"
 ```
 
 ---
@@ -849,9 +996,9 @@ imports:
 - return:
     value: "${result}"
 
-# flow_if
+# flow_if (use 'if:' or 'condition:' - both work)
 - flow_if:
-    condition: "count > 10"
+    if: "count > 10"      # Raw expression, no ${}
     then:
       - reply:
           content: "High"
@@ -1082,7 +1229,7 @@ imports:
 
 # voice_set_filter
 - voice_set_filter:
-    filter: bassboost  # bassboost | nightcore | vaporwave | karaoke | tremolo | vibrato | reverse | treble | surrounding | earrape
+    filter: bassboost  # bassboost | nightcore | vaporwave | 8d | treble | normalizer | karaoke | tremolo | vibrato | reverse
     enabled: true
 
 # voice_search
@@ -1216,11 +1363,11 @@ imports:
         x: 320
         y: 40
         radius: 80
-        src: "${user.avatar}"
+        src: "${user.displayAvatarURL}"  # Full URL needed for canvas
       - type: text
         x: 400
         y: 200
-        text: "Hello, ${member.display_name}!"
+        text: "Hello, ${member.displayName}!"
         font: sans-serif
         size: 32
         color: "#FFFFFF"
@@ -1242,9 +1389,30 @@ imports:
 - `rect` - Rectangle (width, height, color, radius)
 - `text` - Text (text, font, size, color, align)
 - `image` - Image (src, width, height, opacity)
-- `circle_image` - Circular image for avatars (src, radius, border)
-- `progress_bar` - Progress bar (progress 0-1, background, fill)
+- `circle_image` - Circular image for avatars (src/url, radius, border)
+- `progress_bar` - Progress bar (progress/value 0-1, background, fill/color)
 - `gradient` - Gradient fill (direction, stops)
+
+---
+
+## Action Field Aliases (Important)
+
+Many actions have field aliases for convenience. Both versions work:
+
+| Action | Field | Alias |
+|--------|-------|-------|
+| `set`, `increment`, `decrement`, `list_push`, `list_remove`, `set_map`, `delete_map` | `var` | `key` |
+| `edit_message`, `delete_message`, `add_reaction` | `message_id` | `message` |
+| `flow_if` | `if` | `condition` |
+| `voice_volume` | `level` | `volume` |
+| `circle_image` layer | `src` | `url` |
+| `progress_bar` layer | `progress` | `value` |
+| `progress_bar` layer | `fill` | `color` |
+
+**Required Fields:**
+- `db_query` requires `as:` field (stores result in variable)
+- `record_metric` requires `type:` field (`counter`, `gauge`, or `histogram`)
+- Command options require `description:` field
 
 ---
 
@@ -1270,9 +1438,59 @@ content: "Today: ${now() | formatDate}"
 | `message` | Message object (in message events) |
 | `interaction` | Interaction object (in commands) |
 | `options` | Command options |
+| `args` | Alias for options |
 | `client` | Bot client object |
 | `state` | State variables (state.guild.varname, state.user.varname, etc.) |
 | `env` | Environment variables (env.TOKEN) |
+
+**IMPORTANT: CLI passes raw Discord.js objects with camelCase property names.**
+
+The CLI uses raw Discord.js objects wrapped with a proxy that auto-resolves URL methods. This means:
+- Use **camelCase** property names: `displayName`, `memberCount`, `createdAt`
+- URL methods work as properties: `${user.displayAvatarURL}` returns the URL string (no parentheses needed)
+- Access all Discord.js properties directly
+
+**Common Context Properties:**
+
+| Object | Property | Type | Description |
+|--------|----------|------|-------------|
+| `user` | `id` | string | User's Discord ID |
+| `user` | `username` | string | Username |
+| `user` | `tag` | string | Full user tag (username#0000) |
+| `user` | `bot` | boolean | Whether user is a bot |
+| `user` | `displayAvatarURL` | string | **Full avatar URL (auto-resolved, use for embeds/canvas)** |
+| `user` | `avatarURL` | string | Avatar URL (auto-resolved) |
+| `user` | `avatar` | string | Avatar hash (NOT a URL - don't use for images) |
+| `user` | `createdAt` | Date | Account creation date |
+| `member` | `displayName` | string | Display name in server (nickname or username) |
+| `member` | `nickname` | string/null | Server nickname |
+| `member` | `joinedAt` | Date | When member joined |
+| `member` | `premiumSince` | Date/null | Boost start date |
+| `member` | `displayAvatarURL` | string | Member avatar URL (auto-resolved) |
+| `guild` | `id` | string | Server ID |
+| `guild` | `name` | string | Server name |
+| `guild` | `memberCount` | number | Total members |
+| `guild` | `iconURL` | string | Server icon URL (auto-resolved) |
+| `guild` | `ownerId` | string | Owner's user ID |
+| `guild` | `premiumTier` | number | Boost level (0-3) |
+| `channel` | `id` | string | Channel ID |
+| `channel` | `name` | string | Channel name |
+| `channel` | `type` | number | Channel type |
+| `channel` | `topic` | string/null | Channel topic |
+| `message` | `id` | string | Message ID |
+| `message` | `content` | string | Message content |
+| `message` | `author` | User | Message author |
+| `message` | `createdAt` | Date | Send timestamp |
+
+**URL Methods Auto-Resolution:**
+The following Discord.js methods are automatically called when accessed as properties:
+- `displayAvatarURL` → returns URL string with size 512
+- `avatarURL` → returns URL string
+- `bannerURL` → returns URL string
+- `iconURL` → returns URL string (for guilds)
+- `splashURL` → returns URL string (for guilds)
+
+**Important:** For canvas `circle_image.src` and embed `thumbnail.url`, use `displayAvatarURL` (the full URL), not `avatar` (just the hash).
 
 ### Operators
 
@@ -1284,7 +1502,7 @@ content: "Today: ${now() | formatDate}"
 | `? :` | Ternary: `x > 5 ? "big" : "small"` |
 | `\|` | Pipe (transform): `name \| upper` |
 
-### Functions (71)
+### Functions (69)
 
 **Date/Time (5)**
 | Function | Example |
@@ -1404,7 +1622,7 @@ content: "${name | upper | truncate(20)}"
 `lower`, `upper`, `capitalize`, `trim`, `truncate(len, suffix?)`, `split(delim)`, `replace(find, repl)`, `padStart(len, char?)`, `padEnd(len, char?)`, `includes(sub)`, `startsWith(prefix)`, `endsWith(suffix)`, `contains(sub)`
 
 **Array Transforms**
-`join(delim)`, `first`, `last`, `nth(n)`, `slice(start, end?)`, `reverse`, `sort(key?)`, `unique`, `flatten`, `filter(expr)`, `map(expr)`, `pluck(key)`, `pick(keys)`, `shuffle`
+`join(delim)`, `first`, `last`, `nth(n)`, `slice(start, end?)`, `reverse`, `sort(key?)`, `unique`, `flatten`, `filter(key, value)`, `map(key)`, `pluck(key)`, `pick`, `shuffle`
 
 **Number Transforms**
 `round(decimals?)`, `floor`, `ceil`, `abs`, `format`, `ordinal`
@@ -1510,9 +1728,35 @@ content: "${name | upper | truncate(20)}"
 |------------|-----------|
 | Message events | `message`, `channel`, `guild`, `user` |
 | Member events | `member`, `guild`, `user` |
-| Reaction events | `reaction`, `message`, `user` |
-| Voice events | `voiceState`, `member`, `channel` |
-| Interaction events | `interaction`, `user`, `guild`, `channel` |
+| Reaction events | `reaction`, `message`, `user`, `emoji` |
+| Voice events | `voiceState`, `member`, `channel`, `old_voice_state`, `new_voice_state` |
+| Interaction events | `interaction`, `user`, `guild`, `channel`, `options` |
+
+**Component Interaction Context (buttons, selects, modals):**
+
+| Component | Additional Variables |
+|-----------|---------------------|
+| Button | `custom_id`, `customId`, `component_type` |
+| Select Menu | `values` (selected values array), `selected`, `custom_id`, `component_type` |
+| Modal | `fields` (object mapping field custom_id to value), `modal_values`, `custom_id` |
+
+Example accessing select menu values:
+```yaml
+# In component actions
+- batch:
+    items: "${values}"   # or "${interaction.values}"
+    as: selected
+    each:
+      - log:
+          message: "Selected: ${selected}"
+```
+
+Example accessing modal fields:
+```yaml
+# In modal actions
+- send_message:
+    content: "${fields.feedback_text}"  # Access by text_input custom_id
+```
 
 ### Duration Format
 
@@ -1524,6 +1768,22 @@ content: "${name | upper | truncate(20)}"
 | `1h` | Hours |
 | `1d` | Days |
 | `1h30m` | Combined |
+
+### Discord Permissions
+
+Common permissions for commands and channel overrides:
+
+**General:**
+`ADMINISTRATOR`, `VIEW_CHANNEL`, `MANAGE_CHANNELS`, `MANAGE_ROLES`, `MANAGE_GUILD`, `CREATE_INSTANT_INVITE`, `CHANGE_NICKNAME`, `MANAGE_NICKNAMES`, `MANAGE_EXPRESSIONS`, `VIEW_AUDIT_LOG`, `VIEW_GUILD_INSIGHTS`
+
+**Text:**
+`SEND_MESSAGES`, `SEND_MESSAGES_IN_THREADS`, `CREATE_PUBLIC_THREADS`, `CREATE_PRIVATE_THREADS`, `EMBED_LINKS`, `ATTACH_FILES`, `ADD_REACTIONS`, `USE_EXTERNAL_EMOJIS`, `USE_EXTERNAL_STICKERS`, `MENTION_EVERYONE`, `MANAGE_MESSAGES`, `READ_MESSAGE_HISTORY`, `SEND_TTS_MESSAGES`, `USE_APPLICATION_COMMANDS`
+
+**Voice:**
+`CONNECT`, `SPEAK`, `STREAM`, `USE_VAD`, `PRIORITY_SPEAKER`, `MUTE_MEMBERS`, `DEAFEN_MEMBERS`, `MOVE_MEMBERS`
+
+**Moderation:**
+`KICK_MEMBERS`, `BAN_MEMBERS`, `MODERATE_MEMBERS` (timeout), `MANAGE_WEBHOOKS`, `MANAGE_THREADS`
 
 ---
 
@@ -1542,7 +1802,7 @@ events:
           as: "welcome_image"
       - send_message:
           channel: "${env.WELCOME_CHANNEL}"
-          content: "Welcome ${member.display_name}!"
+          content: "Welcome ${member.displayName}!"
           files:
             - attachment: "${welcome_image}"
               name: "welcome.png"
@@ -1678,7 +1938,7 @@ events:
                 scope: member
             - send_message:
                 channel: "${channel.id}"
-                content: "Congrats ${member.display_name}! Level ${state.member.level}!"
+                content: "Congrats ${member.displayName}! Level ${state.member.level}!"
 ```
 
 ---

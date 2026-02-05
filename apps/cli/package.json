@@ -1,8 +1,16 @@
 {
   "name": "@furlow/cli",
-  "version": "1.0.8",
+  "version": "1.0.12",
   "description": "Declarative Discord Bot Framework - Build bots with YAML, no code required",
-  "keywords": ["furlow", "discord", "bot", "cli", "yaml", "declarative", "framework"],
+  "keywords": [
+    "furlow",
+    "discord",
+    "bot",
+    "cli",
+    "yaml",
+    "declarative",
+    "framework"
+  ],
   "homepage": "https://github.com/virgilvox/discord-furlow",
   "license": "MIT",
   "repository": {
@@ -15,7 +23,10 @@
   "bin": {
     "furlow": "./dist/index.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",
@@ -27,12 +38,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@furlow/builtins": "workspace:*",
-    "@furlow/core": "workspace:*",
-    "@furlow/discord": "workspace:*",
-    "@furlow/pipes": "workspace:*",
-    "@furlow/schema": "workspace:*",
-    "@furlow/storage": "workspace:*",
+    "@furlow/builtins": "^1.0.4",
+    "@furlow/core": "^1.0.8",
+    "@furlow/discord": "^1.0.4",
+    "@furlow/pipes": "^1.0.4",
+    "@furlow/schema": "^1.0.3",
+    "@furlow/storage": "^1.0.3",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
     "discord.js": "^14.14.0",

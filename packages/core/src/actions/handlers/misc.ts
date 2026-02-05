@@ -432,10 +432,18 @@ const canvasRenderHandler: ActionHandler<CanvasRenderAction> = {
       for (const [key, value] of Object.entries(config.context)) {
         const strValue = String(value);
         let result: unknown;
-        // Support both ${expr} interpolation syntax and raw expressions
-        if (strValue.includes('${')) {
+
+        // Check if this is a pure expression: exactly "${expr}" with nothing else
+        // In this case, we want the raw value (object), not a stringified version
+        const pureExprMatch = strValue.match(/^\$\{(.+)\}$/);
+        if (pureExprMatch) {
+          // Pure expression - evaluate and return raw value (preserves objects)
+          result = await evaluator.evaluate(pureExprMatch[1]!, context);
+        } else if (strValue.includes('${')) {
+          // Mixed content like "Hello ${name}" - interpolate to string
           result = await evaluator.interpolate(strValue, context);
         } else {
+          // Raw expression without ${} wrapper
           result = await evaluator.evaluate(strValue, context);
         }
         renderContext[key] = result;
