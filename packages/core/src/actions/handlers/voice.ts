@@ -26,6 +26,28 @@ import type {
 } from '@furlow/schema';
 import { ChannelType, type VoiceChannel, type StageChannel } from 'discord.js';
 
+/** Minimal interface for the VoiceManager (defined in @furlow/discord) */
+interface VoiceManagerLike {
+  join(channel: VoiceChannel | StageChannel, options?: Record<string, unknown>): Promise<unknown>;
+  leave(guildId: string): Promise<void>;
+  play(guildId: string, source: string, options?: Record<string, unknown>): Promise<unknown>;
+  pause(guildId: string): boolean;
+  resume(guildId: string): boolean;
+  stop(guildId: string): boolean;
+  skip(guildId: string): Promise<unknown>;
+  seek(guildId: string, position: number): Promise<boolean>;
+  setVolume(guildId: string, volume: number): boolean;
+  setFilter(guildId: string, filter: string, enabled: boolean): Promise<boolean>;
+  search(query: string, options?: Record<string, unknown>): Promise<unknown[]>;
+  getQueue(guildId: string): unknown[];
+  getCurrentTrack(guildId: string): unknown;
+  addToQueue(guildId: string, track: unknown, position?: number | string): void;
+  removeFromQueue(guildId: string, position: number): unknown;
+  clearQueue(guildId: string): void;
+  shuffleQueue(guildId: string): void;
+  setLoopMode(guildId: string, mode: string): void;
+}
+
 /**
  * Parse duration string to milliseconds
  * Supports: "1m30s", "90s", "5m", "1h", "1h30m", "1500ms", or plain numbers (ms)
@@ -67,8 +89,8 @@ function parseDuration(duration: string | number): number {
 /**
  * Get voice manager from context
  */
-function getVoiceManager(context: ActionContext): any {
-  return context._voiceManager || (context._deps as any)?.voiceManager;
+function getVoiceManager(context: ActionContext): VoiceManagerLike | null {
+  return (context._voiceManager || (context._deps as Record<string, unknown>)?.voiceManager) as VoiceManagerLike | null;
 }
 
 /**
@@ -425,7 +447,7 @@ const voiceSearchHandler: ActionHandler<VoiceSearchAction> = {
     }
 
     try {
-      let results: any[];
+      let results: unknown[];
 
       // Use voiceManager.search if available (full implementation)
       if (voiceManager && typeof voiceManager.search === 'function') {
@@ -515,7 +537,7 @@ const queueAddHandler: ActionHandler<QueueAddAction> = {
       return { success: false, error: new Error('Guild not found') };
     }
 
-    let track: any;
+    let track: Record<string, unknown>;
 
     if (config.track) {
       // Track object from voice_search

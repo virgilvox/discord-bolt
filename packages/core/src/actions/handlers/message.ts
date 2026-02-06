@@ -408,7 +408,7 @@ const updateMessageHandler: ActionHandler<UpdateMessageAction> = {
       return { success: false, error: new Error('No component interaction to update') };
     }
 
-    const options: any = {};
+    const options: Record<string, unknown> = {};
 
     if (config.content) {
       options.content = await evaluator.interpolate(String(config.content), context);

@@ -39,6 +39,7 @@ export class DatabasePipe implements Pipe {
   public readonly type = 'database';
   private config: DatabasePipeConfig;
   private connected = false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- db can be better-sqlite3 Database, PostgresWrapper, or MemoryDatabase
   private db: any = null;
   private eventHandlers: Map<string, DatabaseEventHandler[]> = new Map();
 

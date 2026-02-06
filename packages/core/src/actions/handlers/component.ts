@@ -20,10 +20,12 @@ import {
 } from 'discord.js';
 
 /**
- * Build a modal from configuration
+ * Build a modal from configuration.
+ * Config is a Record<string, unknown> because it can come from either
+ * inline YAML definitions or pre-defined ComponentDefinition objects.
  */
 async function buildModal(
-  config: any,
+  config: Record<string, unknown>,
   context: ActionContext,
   deps: HandlerDependencies
 ): Promise<ModalBuilder> {
@@ -46,7 +48,7 @@ async function buildModal(
 
   // Add components (text inputs)
   if (config.components || config.fields || config.inputs) {
-    const components = config.components || config.fields || config.inputs;
+    const components = (config.components || config.fields || config.inputs) as Array<Record<string, unknown>>;
     const rows: ActionRowBuilder<TextInputBuilder>[] = [];
 
     for (const component of components) {
@@ -83,15 +85,15 @@ async function buildModal(
 
       // Required
       if (component.required !== undefined) {
-        input.setRequired(component.required);
+        input.setRequired(Boolean(component.required));
       }
 
       // Min/max length
       if (component.min_length !== undefined) {
-        input.setMinLength(component.min_length);
+        input.setMinLength(Number(component.min_length));
       }
       if (component.max_length !== undefined) {
-        input.setMaxLength(component.max_length);
+        input.setMaxLength(Number(component.max_length));
       }
 
       row.addComponents(input);
@@ -140,7 +142,7 @@ const showModalHandler: ActionHandler<ShowModalAction> = {
         }
       } else {
         // Modal is inline definition
-        modal = await buildModal(config.modal, context, deps);
+        modal = await buildModal(config.modal as unknown as Record<string, unknown>, context, deps);
       }
 
       await interaction.showModal(modal);

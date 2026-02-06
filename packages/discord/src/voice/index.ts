@@ -551,6 +551,7 @@ export class VoiceManager {
       const playDl = await import(/* webpackIgnore: true */ 'play-dl').catch(() => null);
       if (playDl) {
         const results = await playDl.search(query, { limit, source: { youtube: 'video' } });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- play-dl result type varies by version
         return results.map((result: any) => ({
           url: result.url,
           title: result.title ?? query,
@@ -569,6 +570,7 @@ export class VoiceManager {
       const ytsr = await import(/* webpackIgnore: true */ 'youtube-sr').catch(() => null);
       if (ytsr && ytsr.default) {
         const results = await ytsr.default.search(query, { limit, type: 'video' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- youtube-sr result type varies by version
         return results.map((result: any) => ({
           url: result.url,
           title: result.title ?? query,

@@ -1,8 +1,13 @@
 {
   "name": "@furlow/testing",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Test utilities and mocks for FURLOW framework",
-  "keywords": ["furlow", "discord", "testing", "mocks"],
+  "keywords": [
+    "furlow",
+    "discord",
+    "testing",
+    "mocks"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -31,7 +36,10 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist", "fixtures"],
+  "files": [
+    "dist",
+    "fixtures"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",

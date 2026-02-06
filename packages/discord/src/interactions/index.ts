@@ -315,6 +315,7 @@ export class InteractionHandler {
   /**
    * Add an option to a command builder
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- discord.js builders use dynamic method dispatch based on option type
   private addOption(builder: any, opt: CommandOption): void {
     const addMethod = `add${this.getOptionMethodName(opt.type)}Option`;
 
@@ -326,6 +327,7 @@ export class InteractionHandler {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- option builder type varies by option type
     builder[addMethod]((optBuilder: any) => {
       optBuilder.setName(opt.name).setDescription(opt.description);
 

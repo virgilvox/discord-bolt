@@ -65,23 +65,23 @@ function getChannelType(type: string): ChannelType {
  * Helper to resolve permission overwrites
  */
 async function resolvePermissionOverwrites(
-  overwrites: any,
+  overwrites: unknown,
   context: ActionContext,
   deps: HandlerDependencies
-): Promise<any[]> {
+): Promise<Record<string, unknown>[]> {
   const { evaluator } = deps;
 
   if (!overwrites) return [];
 
   // Handle object format: { "role_id": { "SendMessages": true, "ViewChannel": false } }
   if (!Array.isArray(overwrites)) {
-    const result: any[] = [];
-    for (const [id, perms] of Object.entries(overwrites)) {
+    const result: Record<string, unknown>[] = [];
+    for (const [id, perms] of Object.entries(overwrites as Record<string, Record<string, boolean>>)) {
       const allow: bigint[] = [];
       const deny: bigint[] = [];
 
       for (const [perm, value] of Object.entries(perms as Record<string, boolean>)) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) {
           if (value) {
             allow.push(permBit);
@@ -101,8 +101,8 @@ async function resolvePermissionOverwrites(
   }
 
   // Handle array format
-  const result: any[] = [];
-  for (const overwrite of overwrites) {
+  const result: Record<string, unknown>[] = [];
+  for (const overwrite of overwrites as Array<Record<string, unknown>>) {
     const id = await evaluator.interpolate(String(overwrite.id), context);
 
     let allow: bigint = 0n;
@@ -113,7 +113,7 @@ async function resolvePermissionOverwrites(
         ? overwrite.allow
         : [overwrite.allow];
       for (const perm of allowPerms) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) allow |= permBit;
       }
     }
@@ -123,7 +123,7 @@ async function resolvePermissionOverwrites(
         ? overwrite.deny
         : [overwrite.deny];
       for (const perm of denyPerms) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) deny |= permBit;
       }
     }
@@ -156,7 +156,7 @@ const createChannelHandler: ActionHandler<CreateChannelAction> = {
     const name = await evaluator.interpolate(String(config.name), context);
     const type = getChannelType(config.type);
 
-    const options: any = {
+    const options: Record<string, unknown> = {
       name,
       type,
     };
@@ -199,7 +199,7 @@ const createChannelHandler: ActionHandler<CreateChannelAction> = {
     }
 
     try {
-      const channel = await guild.channels.create(options);
+      const channel = await guild.channels.create(options as unknown as Parameters<typeof guild.channels.create>[0]);
 
       // Store in variable if requested
       if (config.as) {
@@ -229,7 +229,7 @@ const editChannelHandler: ActionHandler<EditChannelAction> = {
       return { success: false, error: new Error('Channel not found or cannot be edited') };
     }
 
-    const options: any = {};
+    const options: Record<string, unknown> = {};
 
     if (config.name) {
       options.name = await evaluator.interpolate(String(config.name), context);
@@ -323,7 +323,7 @@ const createThreadHandler: ActionHandler<CreateThreadAction> = {
 
     const name = await evaluator.interpolate(String(config.name), context);
 
-    const options: any = {
+    const options: Record<string, unknown> = {
       name,
       autoArchiveDuration: config.auto_archive_duration || 1440,
       type: config.type === 'private'
@@ -342,10 +342,10 @@ const createThreadHandler: ActionHandler<CreateThreadAction> = {
         // Create thread from message
         const messageId = await evaluator.interpolate(String(config.message), context);
         const message = await (channel as TextChannel).messages.fetch(messageId);
-        thread = await message.startThread(options);
+        thread = await message.startThread(options as unknown as Parameters<typeof message.startThread>[0]);
       } else {
         // Create standalone thread
-        thread = await (channel as TextChannel).threads.create(options);
+        thread = await (channel as TextChannel).threads.create(options as unknown as Parameters<(typeof channel)['threads']['create']>[0]);
       }
 
       return { success: true, data: thread };
@@ -422,7 +422,7 @@ const setChannelPermissionsHandler: ActionHandler<SetChannelPermissionsAction> =
         ? config.allow
         : [config.allow];
       for (const perm of allowPerms) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) allow |= permBit;
       }
     }
@@ -432,7 +432,7 @@ const setChannelPermissionsHandler: ActionHandler<SetChannelPermissionsAction> =
         ? config.deny
         : [config.deny];
       for (const perm of denyPerms) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) deny |= permBit;
       }
     }
@@ -465,7 +465,7 @@ const createRoleHandler: ActionHandler<CreateRoleAction> = {
 
     const name = await evaluator.interpolate(String(config.name), context);
 
-    const options: any = {
+    const options: Record<string, unknown> = {
       name,
     };
 
@@ -488,7 +488,7 @@ const createRoleHandler: ActionHandler<CreateRoleAction> = {
     if (config.permissions) {
       let permissions: bigint = 0n;
       for (const perm of config.permissions) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) permissions |= permBit;
       }
       options.permissions = permissions;
@@ -524,7 +524,7 @@ const editRoleHandler: ActionHandler<EditRoleAction> = {
       return { success: false, error: new Error('Role not found') };
     }
 
-    const options: any = {};
+    const options: Record<string, unknown> = {};
 
     if (config.name) {
       options.name = await evaluator.interpolate(String(config.name), context);
@@ -549,7 +549,7 @@ const editRoleHandler: ActionHandler<EditRoleAction> = {
     if (config.permissions) {
       let permissions: bigint = 0n;
       for (const perm of config.permissions) {
-        const permBit = (PermissionFlagsBits as any)[perm];
+        const permBit = PermissionFlagsBits[perm as keyof typeof PermissionFlagsBits];
         if (permBit) permissions |= permBit;
       }
       options.permissions = permissions;

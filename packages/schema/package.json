@@ -1,8 +1,13 @@
 {
   "name": "@furlow/schema",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "JSON Schema definitions and TypeScript types for FURLOW",
-  "keywords": ["furlow", "discord", "schema", "types"],
+  "keywords": [
+    "furlow",
+    "discord",
+    "schema",
+    "types"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -20,7 +25,9 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "clean": "rm -rf dist .turbo",

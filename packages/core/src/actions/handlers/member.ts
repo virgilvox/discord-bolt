@@ -418,7 +418,7 @@ const sendDMHandler: ActionHandler<SendDMAction> = {
       return { success: false, error: new Error('User not found') };
     }
 
-    const options: any = {};
+    const options: Record<string, unknown> = {};
 
     if (config.content) {
       options.content = await evaluator.interpolate(String(config.content), context);

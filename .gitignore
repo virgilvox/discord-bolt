@@ -44,3 +44,7 @@ temp/
 *.sqlite3
 *.db
 .internal/
+
+# Temporary/debug YAML files
+deepseek_*.yaml
+*.tmp.yaml

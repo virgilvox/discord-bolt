@@ -12,10 +12,11 @@ identity:
 
 commands:
   - name: ping
-    description: Check bot latency
+    description: Check if bot is online
     actions:
       - reply:
-          content: "Pong! ${client.ping}ms"
+          content: "Pong! Bot is online."
+          ephemeral: true
 ```
 
 ---
@@ -524,7 +525,7 @@ embeds:
     description: "Thanks for joining"
     color: 0x5865F2
     thumbnail:
-      url: "${user.displayAvatarURL}"  # Full URL required for embeds
+      url: "${user.displayAvatarURL}"  # Works in embeds (auto-resolved by proxy)
     fields:
       - name: Members
         value: "${guild.memberCount}"
@@ -533,6 +534,8 @@ embeds:
       text: "User #${guild.memberCount}"
     timestamp: true
 ```
+
+**Note:** `displayAvatarURL` works in embeds because the CLI auto-resolves URL methods. However, for **canvas generators**, you must construct URLs manually (see Canvas section).
 
 Use with `$ref`:
 ```yaml
@@ -674,6 +677,10 @@ scheduler:
 
 ### Canvas
 
+**IMPORTANT: Canvas Generator Context Rules**
+
+Canvas generators defined at the top level do NOT have automatic access to runtime context variables (`user`, `member`, `guild`, `state`, etc.). You MUST explicitly pass all needed values via the `context` parameter in `canvas_render`.
+
 ```yaml
 canvas:
   enabled: true
@@ -688,15 +695,49 @@ canvas:
           x: 320
           y: 40
           radius: 80
-          src: "${user.displayAvatarURL}"  # Use displayAvatarURL for the full URL
+          src: "${avatar_url}"  # Use simple variable names passed via context
         - type: text
           x: 400
           y: 215
-          text: "Welcome, ${member.displayName}!"
+          text: "Welcome, ${display_name}!"
           font: sans-serif
           size: 32
           color: "#FFFFFF"
           align: center
+
+commands:
+  - name: welcome
+    actions:
+      # Pre-compute the avatar URL (construct manually for PNG format)
+      - set:
+          var: "avatar_url"
+          value: "https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256"
+      # Pass all needed values via context
+      - canvas_render:
+          generator: "welcome_card"
+          context:
+            avatar_url: "${avatar_url}"
+            display_name: "${member.displayName}"
+          as: "welcome_image"
+      - reply:
+          files:
+            - attachment: "${welcome_image}"
+              name: "welcome.png"
+```
+
+**Canvas Avatar URL Construction:**
+
+Method calls like `displayAvatarURL({ format: 'png' })` do NOT work in expressions. The canvas library also doesn't support WebP images (Discord's default format). You must construct avatar URLs manually:
+
+```yaml
+# User avatar
+"https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256"
+
+# Guild icon
+"https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=256"
+
+# Member avatar (server-specific)
+"https://cdn.discordapp.com/guilds/${guild.id}/users/${user.id}/avatars/${member.avatar}.png?size=256"
 ```
 
 ### Imports
@@ -1049,15 +1090,29 @@ Both formats work identically. The shorthand format is normalized internally bef
           user: "${user2.id}"
           content: "Hello"
 
-# batch
+# batch - IMPORTANT: items must be an expression that evaluates to an array
 - batch:
-    items: "${users}"
+    items: "${users}"  # Expression returning array, NOT a YAML array
     as: "u"
     each:
       - send_dm:
           user: "${u.id}"
           content: "Message"
     concurrency: 1
+
+# batch - iterating over static values (use expression, not YAML array)
+- set:
+    var: "option_keys"
+    value:
+      - "option1"
+      - "option2"
+      - "option3"
+- batch:
+    items: "${option_keys}"  # Reference the variable
+    as: "key"
+    each:
+      - log:
+          message: "Processing ${key}"
 
 # try
 - try:
@@ -1352,7 +1407,13 @@ Both formats work identically. The shorthand format is normalized internally bef
       user: "${member.user}"
     as: "welcome_image"
 
-# render_layers (inline layers)
+# render_layers (inline layers) - pre-compute values first
+- set:
+    var: "avatar_url"
+    value: "https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256"
+- set:
+    var: "xp_progress"
+    value: "${state.member.xp / (state.member.level * 100)}"
 - render_layers:
     width: 800
     height: 400
@@ -1368,7 +1429,7 @@ Both formats work identically. The shorthand format is normalized internally bef
         x: 320
         y: 40
         radius: 80
-        src: "${user.displayAvatarURL}"  # Full URL needed for canvas
+        src: "${avatar_url}"  # Use pre-computed URL variable
       - type: text
         x: 400
         y: 200
@@ -1382,7 +1443,7 @@ Both formats work identically. The shorthand format is normalized internally bef
         y: 350
         width: 600
         height: 30
-        progress: "${xp / maxXp}"
+        progress: "${xp_progress}"  # Use pre-computed progress
         background: "#484b4e"
         fill: "#5865F2"
         radius: 15
@@ -1491,6 +1552,8 @@ The CLI uses raw Discord.js objects wrapped with a proxy that auto-resolves URL 
 - Use **camelCase** property names: `displayName`, `memberCount`, `createdAt`
 - URL methods work as properties: `${user.displayAvatarURL}` returns the URL string (no parentheses needed)
 - Access all Discord.js properties directly
+
+> **Note on naming conventions:** The CLI runtime passes raw Discord.js objects through a Proxy wrapper, so expressions use **camelCase** property names (e.g., `member.displayName`, `guild.memberCount`). The core package's `context.ts` defines snake_case interfaces for unit testing. When writing YAML specs for the CLI, always use camelCase as shown in this reference.
 
 **Common Context Properties:**
 
@@ -1744,7 +1807,7 @@ For advanced use cases, you can also listen to raw Discord.js gateway events. Th
 | Message events | `message`, `channel`, `guild`, `user` |
 | Member events | `member`, `guild`, `user` |
 | Reaction events | `reaction`, `message`, `user`, `emoji` |
-| Voice events | `voiceState`, `member`, `channel`, `old_voice_state`, `new_voice_state` |
+| Voice events | `member`, `channel`, `old_voice_state`, `new_voice_state` |
 | Interaction events | `interaction`, `user`, `guild`, `channel`, `options` |
 
 **Component Interaction Context (buttons, selects, modals):**
@@ -1807,13 +1870,41 @@ Common permissions for commands and channel overrides:
 ### Welcome Message with Canvas Image
 
 ```yaml
+# Define generator with simple variable placeholders
+canvas:
+  generators:
+    welcome_card:
+      width: 800
+      height: 300
+      background: "#23272A"
+      layers:
+        - type: circle_image
+          x: 320
+          y: 40
+          radius: 80
+          src: "${avatar_url}"  # Simple variable, passed via context
+        - type: text
+          x: 400
+          y: 200
+          text: "Welcome, ${display_name}!"
+          font: sans-serif
+          size: 32
+          color: "#FFFFFF"
+          align: center
+
 events:
   - event: guild_member_add
     actions:
+      # Pre-compute avatar URL (canvas doesn't support WebP)
+      - set:
+          var: "avatar_url"
+          value: "https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png?size=256"
+      # Pass all values the generator needs via context
       - canvas_render:
           generator: "welcome_card"
           context:
-            user: "${member.user}"
+            avatar_url: "${avatar_url}"
+            display_name: "${member.displayName}"
           as: "welcome_image"
       - send_message:
           channel: "${env.WELCOME_CHANNEL}"
@@ -1926,11 +2017,11 @@ commands:
 ```yaml
 state:
   variables:
-    xp:
+    user_xp:
       scope: member
       type: number
       default: 0
-    level:
+    user_level:
       scope: member
       type: number
       default: 1
@@ -1941,19 +2032,20 @@ events:
     throttle: 1m
     actions:
       - increment:
-          var: "xp"
+          var: "user_xp"
           by: "${random(15, 25)}"
           scope: member
+      # Check if user leveled up (raw expression in 'if', no ${})
       - flow_if:
-          if: "state.member.xp >= state.member.level * 100"  # Raw expression
+          if: "state.member.user_xp >= state.member.user_level * 100"
           then:
             - increment:
-                var: "level"
+                var: "user_level"
                 by: 1
                 scope: member
             - send_message:
                 channel: "${channel.id}"
-                content: "Congrats ${member.displayName}! Level ${state.member.level}!"
+                content: "${member.displayName} leveled up to **Level ${state.member.user_level}**!"
 ```
 
 ---
@@ -1976,6 +2068,211 @@ pipes:
 ```
 
 Always use environment variables for: tokens, API keys, database credentials, webhook secrets.
+
+---
+
+## Common Pitfalls & Gotchas
+
+### 1. Canvas Generators Have No Runtime Context
+
+**Problem:** Canvas generator layer definitions cannot access `user`, `member`, `guild`, `state`, or other runtime variables directly.
+
+```yaml
+# WRONG - generator layers can't see runtime context
+canvas:
+  generators:
+    profile:
+      layers:
+        - type: text
+          text: "${user.username}"  # user is undefined!
+        - type: circle_image
+          src: "${user.displayAvatarURL}"  # undefined!
+```
+
+**Solution:** Pass all needed values via the `context` parameter in `canvas_render`:
+
+```yaml
+# CORRECT - pre-compute and pass via context
+- set:
+    var: "avatar_url"
+    value: "https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256"
+- canvas_render:
+    generator: "profile"
+    context:
+      username: "${user.username}"
+      avatar_url: "${avatar_url}"
+      level: "${state.member.level}"
+    as: "image"
+```
+
+### 2. Method Calls Don't Work in Expressions
+
+**Problem:** Discord.js method calls with arguments like `displayAvatarURL({ format: 'png' })` are not supported in JEXL expressions.
+
+```yaml
+# WRONG - method call syntax not supported
+src: "${user.displayAvatarURL({ format: 'png' })}"
+```
+
+**Solution:** Construct URLs manually using the Discord CDN pattern:
+
+```yaml
+# CORRECT - construct URL from ID and hash
+src: "https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=256"
+```
+
+### 3. Canvas Library Doesn't Support WebP
+
+**Problem:** Discord CDN returns WebP images by default, but the node-canvas library cannot load WebP format.
+
+**Solution:** Always append `.png` extension when constructing Discord CDN URLs for canvas use.
+
+### 4. Batch Items Must Be Expression, Not YAML Array
+
+**Problem:** The `batch` action's `items` field expects an expression that evaluates to an array, not a literal YAML array.
+
+```yaml
+# WRONG - YAML array gets stringified
+- batch:
+    items:
+      - "a"
+      - "b"
+      - "c"
+    as: "item"
+    each: [...]
+
+# WRONG - expression containing array literal may fail
+- batch:
+    items: "${['a', 'b', 'c']}"
+    as: "item"
+    each: [...]
+```
+
+**Solution:** Define the array in a `set` action first, then reference it:
+
+```yaml
+# CORRECT - set variable first, then reference
+- set:
+    var: "items_list"
+    value:
+      - "a"
+      - "b"
+      - "c"
+- batch:
+    items: "${items_list}"
+    as: "item"
+    each:
+      - log:
+          message: "Item: ${item}"
+```
+
+### 5. Object Literals in Expressions Use Double Quotes
+
+**Problem:** JEXL requires double quotes for strings in object/array literals, but YAML uses double quotes for the outer string.
+
+```yaml
+# WRONG - single quotes in JEXL object literal
+- set:
+    var: "data"
+    value: "${[{'name': 'Alice'}, {'name': 'Bob'}]}"
+```
+
+**Solution:** Use YAML native syntax for complex data structures:
+
+```yaml
+# CORRECT - use YAML array/object syntax
+- set:
+    var: "data"
+    value:
+      - name: "Alice"
+      - name: "Bob"
+```
+
+### 6. Ternary Expressions in Interpolated Strings
+
+**Problem:** Complex ternary expressions inside `${}` interpolation may not evaluate correctly in all contexts.
+
+```yaml
+# MAY FAIL - complex ternary in content
+content: "${result == 1 ? 'Heads' : 'Tails'}"
+```
+
+**Solution:** Pre-compute the value in a `set` action:
+
+```yaml
+# CORRECT - compute separately
+- set:
+    var: "flip_result"
+    value: "${random(1, 2) == 1 ? 'Heads' : 'Tails'}"
+- reply:
+    content: "You flipped **${flip_result}**!"
+```
+
+### 7. State Variables Need Scope Prefix in Expressions
+
+**Problem:** When accessing state variables, you must use the full path including scope.
+
+```yaml
+# WRONG - missing scope prefix
+content: "Level: ${user_level}"
+
+# CORRECT - include scope in path
+content: "Level: ${state.member.user_level}"
+```
+
+### 8. The `when` Field Uses Raw Expressions (No ${})
+
+**Problem:** Condition fields like `when`, `if`, and `while` expect raw JEXL expressions, not interpolated strings.
+
+```yaml
+# WRONG - using ${} in condition
+when: "${!message.author.bot}"
+flow_if:
+  if: "${count > 10}"
+
+# CORRECT - raw expression
+when: "!message.author.bot"
+flow_if:
+  if: "count > 10"
+```
+
+### 9. client.ping May Not Be Available
+
+**Problem:** `${client.ping}` may not resolve in all contexts.
+
+**Solution:** Use alternative approaches or simpler messages:
+
+```yaml
+# Instead of showing ping, just confirm responsiveness
+- reply:
+    content: "Pong! Bot is online and responding."
+```
+
+### 10. Flow Control for Optional Values
+
+**Problem:** Trying to use optional values inline can cause issues.
+
+```yaml
+# MAY FAIL - inline optional handling
+content: "Option 3: ${options.option3 ? options.option3 : 'N/A'}"
+```
+
+**Solution:** Use `flow_if` for conditional logic:
+
+```yaml
+# CORRECT - explicit conditional flow
+- set:
+    var: "message_text"
+    value: "Options: 1. ${options.option1}, 2. ${options.option2}"
+- flow_if:
+    if: "options.option3"
+    then:
+      - set:
+          var: "message_text"
+          value: "${message_text}, 3. ${options.option3}"
+- reply:
+    content: "${message_text}"
+```
 
 ---
 

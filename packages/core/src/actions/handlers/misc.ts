@@ -19,6 +19,7 @@ import type {
   CanvasGenerator,
 } from '@furlow/schema';
 import { createCanvasRenderer, type CanvasRenderer } from '../../canvas/index.js';
+import type { ExpressionEvaluator } from '../../expression/evaluator.js';
 
 // Lazy-loaded canvas renderer instance
 let canvasRenderer: CanvasRenderer | null = null;
@@ -26,7 +27,7 @@ let canvasRenderer: CanvasRenderer | null = null;
 /**
  * Get or create canvas renderer (lazy initialization)
  */
-function getCanvasRenderer(evaluator: any): CanvasRenderer {
+function getCanvasRenderer(evaluator: ExpressionEvaluator): CanvasRenderer {
   if (!canvasRenderer) {
     canvasRenderer = createCanvasRenderer({ evaluator });
   }
@@ -184,7 +185,7 @@ const webhookSendHandler: ActionHandler<WebhookSendAction> = {
 
     const url = await evaluator.interpolate(String(config.url), context);
 
-    const body: any = {};
+    const body: Record<string, unknown> = {};
 
     if (config.content) {
       body.content = await evaluator.interpolate(String(config.content), context);
